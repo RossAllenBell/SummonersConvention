@@ -1,0 +1,25 @@
+<html>
+<head>
+<title>Summoners Convention</title>
+<script src="jquery-1.7.1.min.js"></script>
+<script src="summoners-convention-client.js"></script>
+<script src="summoning.js"></script>
+<script type="text/javascript">
+    $(document).ready(function(){
+    	new SummonersConventionClient()
+    });
+</script>
+</head>
+<body>
+    <div>
+        <input id="playerName" />
+        <input type="button" id="changeName"
+            value="Set" />
+    </div>
+    <div>
+        Material:<select id="materialSelect"></select>
+        Attack:<select id="attackSelect"></select>
+        <div id="abilities"></div>
+    </div>
+</body>
+</html>
