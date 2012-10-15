@@ -16,9 +16,10 @@ var playerNameSequence = 1;
 
 wsServer.on('request', function(request) {
 	var connection = request.accept();
-	var player = {connection: connection, playerId: connection.socket.remoteAddress + ":" + connection.socket.remotePort, name: "Player " + playerNameSequence++, energy: 30};
-	connection.sendUTF(JSON.stringify({event: 'connected', name: player.name}));
-	messagePlayers({event:'playerJoined', name: player.name});
+	var playerNumber = playerNameSequence++;
+	var player = {playerNumber: playerNumber, connection: connection, playerId: connection.socket.remoteAddress + ":" + connection.socket.remotePort, name: "Player " + playerNumber, energy: 30};
+	connection.sendUTF(JSON.stringify({event: 'connected', name: player.name, playerNumber: playerNumber}));
+	messagePlayers({event:'playerJoined', name: player.name, playerNumber: playerNumber});
 	players.push(player);
 	connectionsToPlayers[connection] = player;
 	
@@ -35,7 +36,8 @@ wsServer.on('request', function(request) {
 		}
 	});
 	connection.on('close', function(reasonCode, description) {
-		messagePlayers("Player disconnected: " + connectionsToPlayers[this].name);
+		var player = connectionsToPlayers[this];
+		messagePlayers({event:'playerLeft', name: player.name, playerNumber: player.playerNumber});
 		var that = this;
 		players = players.filter(function(player){return player.connection != that;});
 		connectionsToPlayers[this] = undefined;
