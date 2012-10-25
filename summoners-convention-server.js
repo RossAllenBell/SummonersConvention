@@ -16,8 +16,10 @@ var playerNameSequence = 1;
 
 wsServer.on('request', function(request) {
 	var connection = request.accept();
+	var playerId = getConnectionId(connection);
+	connection.playerId = playerId;
 	var playerNumber = playerNameSequence++;
-	var player = {playerNumber: playerNumber, connection: connection, playerId: getConnectionId(connection), name: "Player " + playerNumber, energy: 30};
+	var player = {playerNumber: playerNumber, connection: connection, playerId: playerId, name: "Player " + playerNumber, energy: 30};
 	connection.sendUTF(JSON.stringify({event: 'connected', name: player.name, playerNumber: playerNumber}));
 	messagePlayers({event:'playerJoined', name: player.name, playerNumber: playerNumber});
 	players.push(player);
@@ -31,17 +33,16 @@ wsServer.on('request', function(request) {
 	connection.on('message', function(message) {
 		try{
 			var data = JSON.parse(message.utf8Data);
-			socketEventHandler(getConnectionId(this), data);
+			socketEventHandler(this.playerId, data);
 		} catch (e){
 			console.warn('Unable to parse socket event: ' + message.utf8Data + '\n' + e);
 		}
 	});
 	connection.on('close', function(reasonCode, description) {
-	    var playerId = getConnectionId(this);
-		var player = playerIdsToPlayers[playerId];
-		messagePlayers({event:'playerLeft', name: player.name, playerNumber: player.playerNumber});
-		players = players.filter(function(player){return player.playerId !== playerId;});
-		playerIdsToPlayers[playerId] = undefined;
+		var disconnectingPlayer = playerIdsToPlayers[this.playerId];
+		messagePlayers({event:'playerLeft', name: disconnectingPlayer.name, playerNumber: disconnectingPlayer.playerNumber});
+		players = players.filter(function(player){return player.playerId !== disconnectingPlayer.playerId;});
+		playerIdsToPlayers[disconnectingPlayer.playerId] = undefined;
 	});
 });
 
