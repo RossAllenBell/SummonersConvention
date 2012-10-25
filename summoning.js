@@ -26,6 +26,6 @@ exports.Summoning = function(){
 			abilitiesCost += this.ABILITY[abilities[i]].cost;
 		}
 		return this.MATERIAL[material].cost + this.ATTACK_MODIFICATION[attackModification].cost + abilitiesCost; 
-	}
+	};
 	
 };

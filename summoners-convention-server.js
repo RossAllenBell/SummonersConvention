@@ -11,42 +11,43 @@ var latestTimeoutId = undefined;
 var SETUP_SECONDS = 5;
 
 var players = [];
-var connectionsToPlayers = {};
+var playerIdsToPlayers = {};
 var playerNameSequence = 1;
 
 wsServer.on('request', function(request) {
 	var connection = request.accept();
 	var playerNumber = playerNameSequence++;
-	var player = {playerNumber: playerNumber, connection: connection, playerId: connection.socket.remoteAddress + ":" + connection.socket.remotePort, name: "Player " + playerNumber, energy: 30};
+	var player = {playerNumber: playerNumber, connection: connection, playerId: getConnectionId(connection), name: "Player " + playerNumber, energy: 30};
 	connection.sendUTF(JSON.stringify({event: 'connected', name: player.name, playerNumber: playerNumber}));
 	messagePlayers({event:'playerJoined', name: player.name, playerNumber: playerNumber});
 	players.push(player);
-	connectionsToPlayers[connection] = player;
+	connection.sendUTF(JSON.stringify({event: 'playersList', players: players.map(function(e){return {name:e.name,playerNumber:e.playerNumber};})}));
+	playerIdsToPlayers[player.playerId] = player;
 	
-	if(typeof latestTimeoutId == 'undefined' && players.length >= 2){
+	if(typeof latestTimeoutId === 'undefined' && players.length >= 2){
 		latestTimeoutId = setTimeout(start, 0);
 	}
 	
 	connection.on('message', function(message) {
 		try{
 			var data = JSON.parse(message.utf8Data);
-			socketEventHandler(this, data);
+			socketEventHandler(getConnectionId(this), data);
 		} catch (e){
 			console.warn('Unable to parse socket event: ' + message.utf8Data + '\n' + e);
 		}
 	});
 	connection.on('close', function(reasonCode, description) {
-		var player = connectionsToPlayers[this];
+	    var playerId = getConnectionId(this);
+		var player = playerIdsToPlayers[playerId];
 		messagePlayers({event:'playerLeft', name: player.name, playerNumber: player.playerNumber});
-		var that = this;
-		players = players.filter(function(player){return player.connection != that;});
-		connectionsToPlayers[this] = undefined;
+		players = players.filter(function(player){return player.playerId !== playerId;});
+		playerIdsToPlayers[playerId] = undefined;
 	});
 });
 
 function messagePlayers(message){
 	var text = JSON.stringify(message);
-	console.log(text);
+	//console.log(text);
 	players.forEach(function(player){player.connection.sendUTF(text);});
 }
 
@@ -85,10 +86,28 @@ var conventionEventHandler = function(data){
 	messagePlayers(data);
 };
 
-var socketEventHandler = function(connection, data){
+var socketEventHandler = function(aPlayerId, data){
 	switch(data.event){
-	case 'changeName':
-		connectionsToPlayers[connection].name = data.name;
+	case 'nameChange':
+	    nameChange(aPlayerId, data);
 		break;
+	default:
+        console.warn('Unkown event: ' + JSON.stringify(data));
 	};
 };
+
+function nameChange(aPlayerId, nameChangeData) {
+    var player = playerIdsToPlayers[aPlayerId];
+    player.name = nameChangeData.name;
+    messagePlayers({event: 'nameChange', name: player.name, playerNumber: player.playerNumber});
+    for(otherPlayerI in players){
+        var otherPlayer = players[otherPlayerI];
+        if(otherPlayer.target.playerNumber === player.playerNumber){
+            conventionEventHandler({event:'golem-targeted', name:otherPlayer.name, target:otherPlayer.target.name, playerNumber: otherPlayer.playerNumber, targetPlayerNumber: otherPlayer.target.playerNumber});
+        }
+    }
+}
+
+function getConnectionId(aConnection){
+    return aConnection.socket.remoteAddress + ":" + aConnection.socket.remotePort;
+}
