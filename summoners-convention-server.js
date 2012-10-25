@@ -102,7 +102,7 @@ function nameChange(aPlayerId, nameChangeData) {
     messagePlayers({event: 'nameChange', name: player.name, playerNumber: player.playerNumber});
     for(otherPlayerI in players){
         var otherPlayer = players[otherPlayerI];
-        if(otherPlayer.target.playerNumber === player.playerNumber){
+        if(typeof otherPlayer.target !== 'undefined' && otherPlayer.target.playerNumber === player.playerNumber){
             conventionEventHandler({event:'golem-targeted', name:otherPlayer.name, target:otherPlayer.target.name, playerNumber: otherPlayer.playerNumber, targetPlayerNumber: otherPlayer.target.playerNumber});
         }
     }
