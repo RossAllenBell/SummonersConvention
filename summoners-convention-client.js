@@ -19,18 +19,18 @@ function SummonersConventionClient() {
     
     var materialSelect = $('#materialSelect');
     for (i in Summoning.MATERIAL) {
-        materialSelect.append($('<option></option>').val(i).html(i + ' (' + Summoning.MATERIAL[i].cost + ')'));
+        materialSelect.append($('<option></option>').attr('id', 'materialOption' + i).val(i).html(i + ' (' + Summoning.MATERIAL[i].cost + ')'));
     }
     materialSelect.change(function() {
-        recalcCost();
+        golemOptionsChanged();
     });
     
     var attackSelect = $('#attackSelect');
     for (i in Summoning.ATTACK_MODIFICATION) {
-        attackSelect.append($('<option></option>').val(i).html(i + ' (' + Summoning.ATTACK_MODIFICATION[i].cost + ')'));
+        attackSelect.append($('<option></option>').attr('id', 'attackOption' + i).val(i).html(i + ' (' + Summoning.ATTACK_MODIFICATION[i].cost + ')'));
     }
     attackSelect.change(function() {
-        recalcCost();
+        golemOptionsChanged();
     });
     
     var abilitiesDiv = $('#abilities');
@@ -39,7 +39,7 @@ function SummonersConventionClient() {
         var text = i + ' (' + Summoning.ABILITY[i].cost + ')';
         abilitiesDiv.append($('<input type="checkbox" id="' + id + '" value="' + id + '" /><label for="' + id + '">' + text + '</label>'));
         $('#' + id).change(function() {
-            recalcCost();
+            golemOptionsChanged();
         });
     }
     
@@ -107,7 +107,9 @@ function SummonersConventionClient() {
     
     function connected(data){
         $('#myPlayerName').val(data.name);
+        $('#energy').text(data.energy);
         me.playerNumber = data.playerNumber;
+        me.energy = data.energy;
     }
     
     function winner(data) {
@@ -126,6 +128,7 @@ function SummonersConventionClient() {
     function golemSummoned(golemData) {
         $('#playerHealth' + golemData.playerNumber).text(golemData.health);
         $('#playerTarget' + golemData.playerNumber).text('');
+        $('#playerGolemConfig' + golemData.playerNumber).text(JSON.stringify(golemData.golemConfig));
     }
     
     function golemTargeted(golemData) {
@@ -136,18 +139,17 @@ function SummonersConventionClient() {
     }
     
     function playersList(playersData) {
-        for(playerI in playersData.players){
-            var player = playersData.players[playerI];
-            $('#players').append(buildPlayerRow(player.playerNumber, player.name));
-        }
+        playersData.players.forEach(function(player){playerJoined(player);});
     };
     
     function playerJoined(playerData) {
-        $('#players').append(buildPlayerRow(playerData.playerNumber, playerData.name));
+        $('#players').append(buildPlayerRow(playerData.playerNumber));
+        $('#playerName' + playerData.playerNumber).text(playerData.name);
+        $('#playerEnergy' + playerData.playerNumber).text(playerData.energy);
     }
     
-    function buildPlayerRow(playerNumber, playerName) {
-        return $('<tr id="playerRow' + playerNumber + '"><td id="playerName' + playerNumber + '">' + playerName + '</td><td id="playerHealth' + playerNumber + '"></td><td id="playerTarget' + playerNumber + '"></td></tr>');
+    function buildPlayerRow(playerNumber) {
+        return $('<tr id="playerRow' + playerNumber + '"><td id="playerName' + playerNumber + '"></td><td id="playerEnergy' + playerNumber + '"></td><td id="playerHealth' + playerNumber + '"></td><td id="playerTarget' + playerNumber + '"></td><td id="playerGolemConfig' + playerNumber + '"></td></tr>');
     }
     
     function playerLeft(playerData) {
@@ -158,7 +160,58 @@ function SummonersConventionClient() {
         $('#playerName' + data.playerNumber).text(data.name);
     }
     
-    function recalcCost() {
+    function golemOptionsChanged() {        
+        updateCost();
+        
+        var actualMaterial = $('#materialSelect').val();
+        var actualAttack = $('#attackSelect').val();
+        var actualAbilities = [];
+        for (i in Summoning.ABILITY) {
+            if ($('#ability-' + i).attr('checked') === 'checked') {
+                actualAbilities.push(i);
+            }
+        }        
+
+        socket.send(JSON.stringify({
+            event : 'golemConfigChange',
+            material : actualMaterial,
+            attack : actualAttack,
+            abilities: actualAbilities
+        }));
+        
+        for (i in Summoning.MATERIAL) {
+            if(Summoning.calculateCost(i, actualAttack, actualAbilities) > me.energy){
+                $('#materialOption' + i).prop('disabled', true);
+            } else {
+                $('#materialOption' + i).prop('disabled', false);
+            }
+        }
+        
+        for (i in Summoning.ATTACK_MODIFICATION) {
+            if(Summoning.calculateCost(actualMaterial, i, actualAbilities) > me.energy){
+                $('#attackOption' + i).prop('disabled', true);
+            } else {
+                $('#attackOption' + i).prop('disabled', false);
+            }
+        }
+        
+        for (i in Summoning.ABILITY) {
+            var id = 'ability-' + i;
+            if(actualAbilities.indexOf(i) === -1){
+                var abilitiesWithI = actualAbilities.slice(0);
+                abilitiesWithI.push(i);
+                if(Summoning.calculateCost(actualMaterial, actualAttack, abilitiesWithI) > me.energy){
+                    $('#' + id).prop('disabled', true);
+                } else {
+                    $('#' + id).prop('disabled', false);
+                }
+            } else {
+                $('#' + id).prop('disabled', false);
+            }
+        }
+    }
+    
+    function updateCost() {
         var material = $('#materialSelect').val();
         var attack = $('#attackSelect').val();
         var abilities = [];

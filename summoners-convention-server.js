@@ -19,11 +19,11 @@ wsServer.on('request', function(request) {
 	var playerId = getConnectionId(connection);
 	connection.playerId = playerId;
 	var playerNumber = playerNameSequence++;
-	var player = {playerNumber: playerNumber, connection: connection, playerId: playerId, name: "Player " + playerNumber, energy: 30};
-	connection.sendUTF(JSON.stringify({event: 'connected', name: player.name, playerNumber: playerNumber}));
-	messagePlayers({event:'playerJoined', name: player.name, playerNumber: playerNumber});
+	var player = {playerNumber: playerNumber, connection: connection, playerId: playerId, name: "Player " + playerNumber, energy: 30, golemConfig: getBaseGolemConfig()};
+	connection.sendUTF(JSON.stringify({event: 'connected', name: player.name, playerNumber: playerNumber, energy: player.energy}));
+	messagePlayers({event:'playerJoined', name: player.name, playerNumber: playerNumber, energy: player.energy});
 	players.push(player);
-	connection.sendUTF(JSON.stringify({event: 'playersList', players: players.map(function(e){return {name:e.name,playerNumber:e.playerNumber};})}));
+	connection.sendUTF(JSON.stringify({event: 'playersList', players: players.map(function(e){return {name:e.name,playerNumber:e.playerNumber,energy:e.energy};})}));
 	playerIdsToPlayers[player.playerId] = player;
 	
 	if(typeof latestTimeoutId === 'undefined' && players.length >= 2){
@@ -92,10 +92,19 @@ var socketEventHandler = function(aPlayerId, data){
 	case 'nameChange':
 	    nameChange(aPlayerId, data);
 		break;
+	case 'golemConfigChange':
+	    golemConfigChange(aPlayerId, data);
+	    break;
 	default:
         console.warn('Unkown event: ' + JSON.stringify(data));
-	};
+	}
 };
+
+function golemConfigChange(aPlayerId, golemConfigChangeData) {
+    var golemConfig = JSON.parse(JSON.stringify(golemConfigChangeData));
+    golemConfig.event = undefined;
+    playerIdsToPlayers[aPlayerId].golemConfig = golemConfig;
+}
 
 function nameChange(aPlayerId, nameChangeData) {
     var player = playerIdsToPlayers[aPlayerId];
@@ -111,4 +120,8 @@ function nameChange(aPlayerId, nameChangeData) {
 
 function getConnectionId(aConnection){
     return aConnection.socket.remoteAddress + ":" + aConnection.socket.remotePort;
+}
+
+function getBaseGolemConfig() {
+    return {material: 'Straw', attack: 'Base', abilities: []};
 }

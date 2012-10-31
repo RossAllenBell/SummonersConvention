@@ -14,6 +14,15 @@ exports.Summoning = function(){
 			Acid: {cost: 30},
 			Fire: {cost: 30},
 		};
+    
+    this.PROTECTION_MATRIX = {
+        //        Base  Copp  Acid  Fire
+        'Straw': [1.00, 0.75, 0.50, 0.15],
+        'Wood':  [1.00, 0.85, 0.65, 0.35],
+        'Ice':   [1.00, 0.57, 1.00, 0.25],
+        'Clay':  [1.00, 0.90, 0.85, 1.00],
+        'Iron':  [1.00, 1.00, 0.00, 1.00],
+        };
 	
 	this.ABILITY = {
 			Regeneration: {cost: 25},

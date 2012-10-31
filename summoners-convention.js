@@ -6,14 +6,14 @@ exports.SummonersConvention = function(players, conventionEventHandler){
 	};
 	
 	function summonGolems(){
-		players.forEach(function(player){player.health = 100; player.target = undefined;});
-		players.forEach(function(player){conventionEventHandler({event: 'golem-summoned', name: player.name, health: player.health, playerNumber: player.playerNumber});});
-		setTimeout(melee, 1000);
+		players.forEach(function(player){player.health = 100; player.target = undefined; player.currentConventionConfig = JSON.parse(JSON.stringify(player.golemConfig));});
+		players.forEach(function(player){conventionEventHandler({event: 'golem-summoned', name: player.name, health: player.health, playerNumber: player.playerNumber, golemConfig: player.currentConventionConfig});});
+		setTimeout(stepConventionForward, 1000);
 	}
 	
-	function melee(){
+	function stepConventionForward(){
 		var survivors = players.filter(function(player){return player.health > 0;});
-		survivors.forEach(function(survivor){executeAttack(survivor, survivors.filter(function(otherSurvivor){return survivor !== otherSurvivor;}));});
+		survivors.forEach(function(survivor){executeStepForPlayer(survivor, survivors.filter(function(otherSurvivor){return survivor !== otherSurvivor;}));});
 		survivors.forEach(function(survivor){if(survivor.health <= 0) conventionEventHandler({event:'golem-destroyed', name: survivor.name, playerNumber: survivor.playerNumber});});
 		var survivors = players.filter(function(player){return player.health > 0;});
 		if(survivors.length === 0) {
@@ -23,18 +23,15 @@ exports.SummonersConvention = function(players, conventionEventHandler){
 			conventionEventHandler({event: 'winner', name: survivors[0].name, playerNumber: survivors[0].playerNumber});
 			setTimeout(end, 0);
 		} else {
-			setTimeout(melee, 1000);
+			setTimeout(stepConventionForward, 1000);
 		}
 	}
 	
-	function executeAttack(player, otherSurvivors){
-		if(typeof player.target === 'undefined' || player.target.health <= 0){
-			player.target = otherSurvivors[Math.floor(otherSurvivors.length * Math.random())];
-			conventionEventHandler({event:'golem-targeted', name:player.name, target:player.target.name, playerNumber: player.playerNumber, targetPlayerNumber: player.target.playerNumber,});
-		}
+	function executeStepForPlayer(player, otherSurvivors){
+	    examineTarget(player, otherSurvivors);
 		var hitLanded = Math.random() >= 0.5;
 		if(hitLanded){
-			var damage = Math.ceil(33 * Math.random());
+			var damage = generateHitDamage(player);
 			player.target.health -= damage;
 			conventionEventHandler({
 			    event:'golem-hit',
@@ -47,6 +44,17 @@ exports.SummonersConvention = function(players, conventionEventHandler){
 		} else {
 			conventionEventHandler({event:'golem-misses', name:player.name, target:player.target.name, playerNumber: player.playerNumber});
 		}
+	}
+	
+	function examineTarget(player, otherSurvivors) {
+	    if(typeof player.target === 'undefined' || player.target.health <= 0){
+            player.target = otherSurvivors[Math.floor(otherSurvivors.length * Math.random())];
+            conventionEventHandler({event:'golem-targeted', name:player.name, target:player.target.name, playerNumber: player.playerNumber, targetPlayerNumber: player.target.playerNumber,});
+        }
+	}
+	
+	function generateHitDamage(player) {
+	    return Math.ceil(33 * Math.random());
 	}
 	
 	function end(){
