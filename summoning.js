@@ -16,8 +16,8 @@ exports.Summoning = function(){
 		};
 	
 	this.ABILITY = {
-			Regeneration: {cost: 25},
-			Draining: {cost: 25},
+			//Regeneration: {cost: 25},
+			//Draining: {cost: 25},
 		};
 	
 	this.calculateCost = function(material, attackModification, abilities){

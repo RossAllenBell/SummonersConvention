@@ -60,37 +60,37 @@ function SummonersConventionClient() {
         case 'playerLeft':
             playerLeft(data);
             break;
+        case 'nameChange':
+            nameChange(data);
+            break;
         case 'countdown-begin':
             $('#statusSpan').text('beginning countdown...');
             break;
         case 'countdown':
             $('#statusSpan').text(data.second + '...');
             break;
-        case 'start':
-            $('#statusSpan').text('in progress');
-            break;
-        case 'golem-summoned':
-            golemSummoned(data);
-            break;
-        case 'golem-targeted':
-            golemTargeted(data);
-            break;
-        case 'golem-hit':
-            golemHit(data);
-            break;
-        case 'golem-misses':
-            break;
-        case 'golem-destroyed':
-            golemDestroyed(data);
-            break;
-        case 'winner':
-            winner(data);
-            break;
-        case 'end':
-            break;
-        case 'nameChange':
-            nameChange(data);
-            break;
+//        case 'convention-start':
+//            $('#statusSpan').text('in progress');
+//            break;
+//        case 'convention-golem-summoned':
+//            golemSummoned(data);
+//            break;
+//        case 'convention-golem-targeted':
+//            golemTargeted(data);
+//            break;
+//        case 'convention-golem-hit':
+//            golemHit(data);
+//            break;
+//        case 'convention-golem-misses':
+//            break;
+//        case 'convention-golem-destroyed':
+//            golemDestroyed(data);
+//            break;
+//        case 'convention-winner':
+//            winner(data);
+//            break;
+//        case 'convention-end':
+//            break;
         default:
             console.warn('Unkown event: ' + JSON.stringify(data));
         }

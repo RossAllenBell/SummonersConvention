@@ -11,20 +11,18 @@ var latestTimeoutId = undefined;
 var SETUP_SECONDS = 5;
 
 var players = [];
-var playerIdsToPlayers = {};
-var playerNameSequence = 1;
+var playerNumberSequence = 1;
 
 wsServer.on('request', function(request) {
 	var connection = request.accept();
 	var playerId = getConnectionId(connection);
 	connection.playerId = playerId;
-	var playerNumber = playerNameSequence++;
-	var player = {playerNumber: playerNumber, connection: connection, playerId: playerId, name: "Player " + playerNumber, energy: 30, golemConfig: getBaseGolemConfig()};
+	var playerNumber = playerNumberSequence++;
+	var player = {playerNumber: playerNumber, connection: connection, playerId: playerId, name: "Player " + playerNumber, energy: 45, golemConfig: getBaseGolemConfig()};
 	connection.sendUTF(JSON.stringify({event: 'connected', name: player.name, playerNumber: playerNumber, energy: player.energy}));
 	messagePlayers({event:'playerJoined', name: player.name, playerNumber: playerNumber, energy: player.energy});
 	players.push(player);
 	connection.sendUTF(JSON.stringify({event: 'playersList', players: players.map(function(e){return {name:e.name,playerNumber:e.playerNumber,energy:e.energy};})}));
-	playerIdsToPlayers[player.playerId] = player;
 	
 	if(typeof latestTimeoutId === 'undefined' && players.length >= 2){
 		latestTimeoutId = setTimeout(start, 0);
@@ -39,10 +37,9 @@ wsServer.on('request', function(request) {
 		}
 	});
 	connection.on('close', function(reasonCode, description) {
-		var disconnectingPlayer = playerIdsToPlayers[this.playerId];
+		var disconnectingPlayer = getPlayerById(this.playerId);
 		messagePlayers({event:'playerLeft', name: disconnectingPlayer.name, playerNumber: disconnectingPlayer.playerNumber});
 		players = players.filter(function(player){return player.playerId !== disconnectingPlayer.playerId;});
-		playerIdsToPlayers[disconnectingPlayer.playerId] = undefined;
 	});
 });
 
@@ -79,7 +76,7 @@ function end(){
 
 var conventionEventHandler = function(data){
 	switch(data.event){
-	case 'end':
+	case 'convention-end':
 		end();
 		break;
 	}
@@ -103,11 +100,11 @@ var socketEventHandler = function(aPlayerId, data){
 function golemConfigChange(aPlayerId, golemConfigChangeData) {
     var golemConfig = JSON.parse(JSON.stringify(golemConfigChangeData));
     golemConfig.event = undefined;
-    playerIdsToPlayers[aPlayerId].golemConfig = golemConfig;
+    getPlayerById(aPlayerId).golemConfig = golemConfig;
 }
 
 function nameChange(aPlayerId, nameChangeData) {
-    var player = playerIdsToPlayers[aPlayerId];
+    var player = getPlayerById(aPlayerId);
     player.name = nameChangeData.name;
     messagePlayers({event: 'nameChange', name: player.name, playerNumber: player.playerNumber});
     for(otherPlayerI in players){
@@ -124,4 +121,8 @@ function getConnectionId(aConnection){
 
 function getBaseGolemConfig() {
     return {material: 'Straw', attack: 'Base', abilities: []};
+}
+
+function getPlayerById(aPlayerId){
+    return players.filter(function(player){return player.playerId === aPlayerId;})[0];
 }
