@@ -7,6 +7,9 @@ var exports = {};
 
 function SummonersConventionClient() {
     
+    var canvas = new FluidCanvas({container: $('#renderDiv'), drawableWidth:500, drawableHeight:500, unavailableHeight: function(){return $('#hudDiv').height();}});
+    $('#hudDiv').bind('DOMSubtreeModified', canvas.resizeContainerDiv);
+    
     var Summoning = new exports.Summoning();
     
     $('#myPlayerName').blur(function(e) {

@@ -1,2 +1,6 @@
-make convention factor in config options
-make graphical instead of textual
+implement graphical game status
+implement abilities
+implement behavior
+create energy changing mechanics
+maybe allow summoners to resummon, and lose the concept of a round
+add random events

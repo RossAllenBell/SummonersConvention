@@ -1,28 +1,19 @@
 exports.Summoning = function(){
 	
 	this.MATERIAL = {
-			Straw: {cost: 0},
-			Wood: {cost: 15},
-			Ice: {cost: 15},
-			Clay: {cost: 20},
-			Iron: {cost: 30},
+			Straw: {cost:  0, Base: 0.70, Copper: 0.75, Acid: 0.50, Fire: 0.15},
+			Wood:  {cost: 15, Base: 0.80, Copper: 0.85, Acid: 0.65, Fire: 0.35},
+			Ice:   {cost: 15, Base: 0.80, Copper: 0.57, Acid: 1.00, Fire: 0.25},
+			Clay:  {cost: 20, Base: 0.90, Copper: 0.60, Acid: 0.75, Fire: 0.80},
+			Iron:  {cost: 30, Base: 1.00, Copper: 1.00, Acid: 0.30, Fire: 1.00},
 		};
 	
 	this.ATTACK_MODIFICATION = {
-			Base: {cost: 0},
+			Base:   {cost: 0},
 			Copper: {cost: 20},
-			Acid: {cost: 30},
-			Fire: {cost: 30},
+			Acid:   {cost: 30},
+			Fire:   {cost: 30},
 		};
-    
-    this.PROTECTION_MATRIX = {
-        //        Base  Copp  Acid  Fire
-        'Straw': [1.00, 0.75, 0.50, 0.15],
-        'Wood':  [1.00, 0.85, 0.65, 0.35],
-        'Ice':   [1.00, 0.57, 1.00, 0.25],
-        'Clay':  [1.00, 0.90, 0.85, 1.00],
-        'Iron':  [1.00, 1.00, 0.00, 1.00],
-        };
 	
 	this.ABILITY = {
 			Regeneration: {cost: 25},

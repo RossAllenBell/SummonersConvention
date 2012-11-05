@@ -1,0 +1,3 @@
+[submodule "FluidCanvas"]
+	path = FluidCanvas
+	url = https://github.com/fatgram10/FluidCanvas.git

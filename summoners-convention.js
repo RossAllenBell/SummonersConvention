@@ -1,4 +1,10 @@
-exports.SummonersConvention = function(players, conventionEventHandler){	
+var Summoning = require('./summoning.js').Summoning;
+
+exports.SummonersConvention = function(players, conventionEventHandler){
+    
+    var FULL_DAMAGE = 35;
+    
+    var summoning = new Summoning();
 	
 	this.convene = function(){
 		conventionEventHandler({event:'start'});
@@ -29,8 +35,7 @@ exports.SummonersConvention = function(players, conventionEventHandler){
 	
 	function executeStepForPlayer(player, otherSurvivors){
 	    examineTarget(player, otherSurvivors);
-		var hitLanded = Math.random() >= 0.5;
-		if(hitLanded){
+		if(isHitSuccess(player)){
 			var damage = generateHitDamage(player);
 			player.target.health -= damage;
 			conventionEventHandler({
@@ -53,8 +58,14 @@ exports.SummonersConvention = function(players, conventionEventHandler){
         }
 	}
 	
+	function isHitSuccess(player){
+	    return Math.random() <= 0.8;
+	}
+	
 	function generateHitDamage(player) {
-	    return Math.ceil(33 * Math.random());
+	    var unblockedDamage = FULL_DAMAGE * Math.random();
+	    var blockedDamage = unblockedDamage * Math.random() * summoning.MATERIAL[player.target.currentConventionConfig.material][player.currentConventionConfig.attack];
+	    return Math.max(0, Math.ceil(unblockedDamage - blockedDamage));
 	}
 	
 	function end(){

@@ -4,6 +4,7 @@
 <script src="jquery-1.7.1.min.js"></script>
 <script src="summoners-convention-client.js"></script>
 <script src="summoning.js"></script>
+<script src="FluidCanvas/FluidCanvas.js"></script>
 <script type="text/javascript">
     $(document).ready(function(){
     	new SummonersConventionClient()
@@ -11,26 +12,31 @@
 </script>
 </head>
 <body>
-    <div>
-        <input id="myPlayerName" />
-        Energy: <span id="energy">0</span>
+    <div id='hudDiv'>
+        <div>
+            <input id="myPlayerName" />
+            Energy: <span id="energy">0</span>
+        </div>
+        <div>
+            Material:<select id="materialSelect"></select>
+            Attack:<select id="attackSelect"></select>
+            <div id="abilities"></div>
+        </div>
+        <div>
+            Cost: <span id="cost">0</span>
+        </div>
+        <br />
+        Game status: <span id="statusSpan">waiting...</span>
+        <div>
+            <table border="1" cellspacing="0" id="players">
+                <tr>
+                    <td>Player</td><td>Energy</td><td>Golem Health</td><td>Target</td><td>Golem</td>
+                </tr>
+            </table>
+        </div>
     </div>
-    <div>
-        Material:<select id="materialSelect"></select>
-        Attack:<select id="attackSelect"></select>
-        <div id="abilities"></div>
-    </div>
-    <div>
-        Cost: <span id="cost">0</span>
-    </div>
-    <br />
-    Game status: <span id="statusSpan">waiting...</span>
-    <div>
-        <table border="1" cellspacing="0" id="players">
-            <tr>
-                <td>Player</td><td>Energy</td><td>Golem Health</td><td>Target</td><td>Golem</td>
-            </tr>
-        </table>
+    <div id="renderDiv">
+    
     </div>
 </body>
 </html>
