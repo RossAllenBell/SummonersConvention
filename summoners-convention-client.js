@@ -7,8 +7,12 @@ var exports = {};
 
 function SummonersConventionClient() {
     
+    var summoners = [];
+    var golems = [];
+    
     var canvas = new FluidCanvas({container: $('#renderDiv'), drawableWidth:500, drawableHeight:500, unavailableHeight: function(){return $('#hudDiv').height();}});
     $('#hudDiv').bind('DOMSubtreeModified', canvas.resizeContainerDiv);
+    new ConventionRenderer(canvas, summoners, golems);
     
     var Summoning = new exports.Summoning();
     
@@ -69,18 +73,22 @@ function SummonersConventionClient() {
         case 'countdown':
             $('#statusSpan').text(data.second + '...');
             break;
-//        case 'convention-start':
-//            $('#statusSpan').text('in progress');
-//            break;
-//        case 'convention-golem-summoned':
-//            golemSummoned(data);
-//            break;
+        case 'convention-summoner':
+            summoners.push(data.summoner);
+            break;
+        case 'convention-start':
+            summoners.length = 0;
+            golems.length = 0;
+            break;
+        case 'convention-golem-summoned':
+            golems.push(data.golem);
+            break;
 //        case 'convention-golem-targeted':
 //            golemTargeted(data);
 //            break;
-//        case 'convention-golem-hit':
-//            golemHit(data);
-//            break;
+        case 'convention-golem-hit':
+            golemHit(data);
+            break;
 //        case 'convention-golem-misses':
 //            break;
 //        case 'convention-golem-destroyed':
@@ -89,8 +97,8 @@ function SummonersConventionClient() {
 //        case 'convention-winner':
 //            winner(data);
 //            break;
-//        case 'convention-end':
-//            break;
+        case 'convention-end':
+            break;
         default:
             console.warn('Unkown event: ' + JSON.stringify(data));
         }
@@ -125,7 +133,8 @@ function SummonersConventionClient() {
     }
     
     function golemHit(hitData) {
-        $('#playerHealth' + hitData.targetPlayerNumber).text(hitData.targetHealth);
+        copyProps(golemByGolemNumber(hitData.golem.golemNumber),hitData.golem);
+        copyProps(golemByGolemNumber(hitData.target.golemNumber),hitData.target);
     }
     
     function golemSummoned(golemData) {
@@ -231,6 +240,24 @@ function SummonersConventionClient() {
             event : 'nameChange',
             name : $('#myPlayerName').val()
         }));
+    }
+    
+    function summonerByPlayerNumber(aPlayerNumber){
+        return summoners.filter(function(summoner){
+            return summoner.playerNumber === aPlayerNumber;
+        })[0];
+    }
+    
+    function golemByGolemNumber(aGolemNumber){
+        return golems.filter(function(golem){
+            return golem.golemNumber === aGolemNumber;
+        })[0];
+    }
+    
+    function copyProps(object, newObject){
+        for(prop in newObject){
+            object[prop] = newObject[prop];
+        }
     }
     
 }

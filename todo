@@ -1,6 +1,7 @@
 implement graphical game status
+create notion of position and movement
+create energy changing mechanics
 implement abilities
 implement behavior
-create energy changing mechanics
 maybe allow summoners to resummon, and lose the concept of a round
 add random events

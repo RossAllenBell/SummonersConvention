@@ -89,10 +89,12 @@ exports.SummonersConvention = function(playerList, conventionEventHandler) {
         examineTarget(golem, otherSurvivors);
         if (isHitSuccess(golem)) {
             var damage = generateHitDamage(golem);
-            golemByGolemNumber(golem.targetGolemNumber).health -= damage;
+            var target = golemByGolemNumber(golem.targetGolemNumber);
+            target.health -= damage;
             conventionEventHandler({
                 event : 'convention-golem-hit',
                 golem : golem,
+                target : target,
                 damage : damage
             });
         } else {
@@ -104,7 +106,7 @@ exports.SummonersConvention = function(playerList, conventionEventHandler) {
     }
     
     function examineTarget(golem, otherSurvivors) {
-        if (typeof golem.target === 'undefined' || golemByGolemNumber(golem.targetGolemNumber).health <= 0) {
+        if ((typeof golem.target === 'undefined' || golemByGolemNumber(golem.targetGolemNumber).health <= 0) && otherSurvivors.length > 0) {
             golem.targetGolemNumber = otherSurvivors[Math.floor(otherSurvivors.length * Math.random())].golemNumber;
             conventionEventHandler({
                 event : 'convention-golem-targeted',
