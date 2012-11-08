@@ -83,20 +83,22 @@ function SummonersConventionClient() {
         case 'convention-golem-summoned':
             golems.push(data.golem);
             break;
-//        case 'convention-golem-targeted':
-//            golemTargeted(data);
-//            break;
+        case 'convention-golem-state-update':
+            copyProps(golemByGolemNumber(data.golem.golemNumber),data.golem);
+            break;
+        case 'convention-golem-targeted':
+            break;
         case 'convention-golem-hit':
             golemHit(data);
             break;
-//        case 'convention-golem-misses':
-//            break;
-//        case 'convention-golem-destroyed':
-//            golemDestroyed(data);
-//            break;
-//        case 'convention-winner':
-//            winner(data);
-//            break;
+        case 'convention-golem-misses':
+            break;
+        case 'convention-golem-destroyed':
+            golemDestroyed(data);
+            break;
+        case 'convention-winner':
+            winner(data);
+            break;
         case 'convention-end':
             break;
         default:
@@ -124,12 +126,11 @@ function SummonersConventionClient() {
     }
     
     function winner(data) {
-        $('#statusSpan').text(typeof data.name === 'undefined'? 'a draw!' : data.name + ' wins!');
+        $('#statusSpan').text(typeof data.golem === 'undefined'? 'a draw!' : summonerByPlayerNumber(data.golem.playerNumber).name + ' wins!');
     }
     
     function golemDestroyed(data) {
-        $('#playerHealth' + data.playerNumber).text(0);
-        $('#playerTarget' + data.playerNumber).text('');
+
     }
     
     function golemHit(hitData) {
@@ -138,13 +139,10 @@ function SummonersConventionClient() {
     }
     
     function golemSummoned(golemData) {
-        $('#playerHealth' + golemData.playerNumber).text(golemData.health);
-        $('#playerTarget' + golemData.playerNumber).text('');
-        $('#playerGolemConfig' + golemData.playerNumber).text(JSON.stringify(golemData.golemConfig));
+
     }
     
     function golemTargeted(golemData) {
-        $('#playerTarget' + golemData.playerNumber).text(golemData.target);
         if(golemData.playerNumber === me.playerNumber){
             me.targetPlayerNumber = golemData.targetPlayerNumber;
         }
@@ -155,21 +153,15 @@ function SummonersConventionClient() {
     };
     
     function playerJoined(playerData) {
-        $('#players').append(buildPlayerRow(playerData.playerNumber));
-        $('#playerName' + playerData.playerNumber).text(playerData.name);
-        $('#playerEnergy' + playerData.playerNumber).text(playerData.energy);
-    }
-    
-    function buildPlayerRow(playerNumber) {
-        return $('<tr id="playerRow' + playerNumber + '"><td id="playerName' + playerNumber + '"></td><td id="playerEnergy' + playerNumber + '"></td><td id="playerHealth' + playerNumber + '"></td><td id="playerTarget' + playerNumber + '"></td><td id="playerGolemConfig' + playerNumber + '"></td></tr>');
+
     }
     
     function playerLeft(playerData) {
-        $('#playerRow' + playerData.playerNumber).remove();
+
     }
     
     function nameChange(data){
-        $('#playerName' + data.playerNumber).text(data.name);
+        
     }
     
     function golemOptionsChanged() {        

@@ -15,34 +15,38 @@ function ConventionRenderer(canvas, summoners, golems){
         context.fillStyle = BACKGROUND_COLOR;
         context.fillRect(0, 0, WIDTH, HEIGHT);
         
-        golems.forEach(function(golem, index){
-            var order = (index - 1) / golems.length;
-            var lengthAroundCircle = order * 2 * Math.PI;
-            var x = (Math.sin(lengthAroundCircle) * WIDTH / 2 * 0.8) + (WIDTH / 2);
-            var y = -1 * (Math.cos(lengthAroundCircle) * HEIGHT / 2 * 0.8) + (HEIGHT / 2);
-            
-            drawGolem(golem, x, y);
+        golems.forEach(function(golem){
+            drawGolem(golem);
         });
         
         setTimeout(arguments.callee, 60 - (new Date().getTime() - loopStartTime));
     }
     
-    function drawGolem(golem, x, y){
+    function drawGolem(golem){
         context.strokeStyle = '#000000';
         context.beginPath();
-        context.arc(x, y, GOLEM_SIZE/2, 0, 2 * Math.PI, false);
+        context.arc(golem.x, golem.y, GOLEM_SIZE/2, 0, 2 * Math.PI, false);
+        context.stroke();
+        
+        context.strokeStyle = '#0000FF';
+        context.beginPath();
+        context.moveTo(golem.x, golem.y);
+        context.lineTo(golem.x + Math.sin(golem.direction) * GOLEM_SIZE/2, golem.y + Math.cos(golem.direction) * GOLEM_SIZE/2);
+        context.closePath();
         context.stroke();
         
         var summoner = summonerByPlayerNumber(golem.playerNumber);
         context.fillStyle = '#000000';
         context.textAlign = 'center';
         context.textBaseline = 'top';
-        context.fillText(summoner.name + '(' + summoner.energy + ')', x, y + (GOLEM_SIZE/2) + 1);
+        context.fillText(summoner.name + '(' + summoner.energy + ')', golem.x, golem.y + (GOLEM_SIZE/2) + 1);
         
-        context.fillStyle = '#00FF00';
-        context.fillRect(x - GOLEM_SIZE/2, y - GOLEM_SIZE/2 - 13, GOLEM_SIZE * golem.health / 100, 10);
-        context.fillStyle = '#FF0000';
-        context.fillRect((x - GOLEM_SIZE/2) + (GOLEM_SIZE * golem.health / 100), y - GOLEM_SIZE/2 - 13, GOLEM_SIZE - (GOLEM_SIZE * golem.health / 100), 10);
+        if(golem.health > 0){
+            context.fillStyle = '#00FF00';
+            context.fillRect(golem.x - GOLEM_SIZE/2, golem.y - GOLEM_SIZE/2 - 13, GOLEM_SIZE * golem.health / 100, 10);
+            context.fillStyle = '#FF0000';
+            context.fillRect((golem.x - GOLEM_SIZE/2) + (GOLEM_SIZE * golem.health / 100), golem.y - GOLEM_SIZE/2 - 13, GOLEM_SIZE - (GOLEM_SIZE * golem.health / 100), 10);
+        }
     }
     
     function summonerByPlayerNumber(aPlayerNumber){

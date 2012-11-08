@@ -1,5 +1,10 @@
-implement graphical game status
-create notion of position and movement
+display golem configs
+smooth movement
+make dead golems paint first and a light/transparent color
+
+display hits
+display misses
+better display game status and remove text status
 create energy changing mechanics
 implement abilities
 implement behavior
