@@ -12,7 +12,7 @@ function SummonersConventionClient() {
     
     var canvas = new FluidCanvas({container: $('#renderDiv'), drawableWidth:500, drawableHeight:500, unavailableHeight: function(){return $('#hudDiv').height();}});
     $('#hudDiv').bind('DOMSubtreeModified', canvas.resizeContainerDiv);
-    new ConventionRenderer(canvas, summoners, golems);
+    var conventionRenderer = new ConventionRenderer(canvas, summoners, golems);
     
     var Summoning = new exports.Summoning();
     
@@ -77,6 +77,7 @@ function SummonersConventionClient() {
             summoners.push(data.summoner);
             break;
         case 'convention-start':
+            conventionRenderer.setConfiguration(data.configuration);
             summoners.length = 0;
             golems.length = 0;
             break;

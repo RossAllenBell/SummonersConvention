@@ -5,14 +5,14 @@ exports.SummonersConvention = function(playerList, conventionEventHandler, confi
         configuration = {};
     }
     
-    var WIDTH = typeof configuration.WIDTH === 'undefined'? 500 : configuration.WIDTH;
-    var HEIGHT = typeof configuration.HEIGHT === 'undefined'? 500 : configuration.HEIGHT;
-    var MELEE_RANGE = typeof configuration.MELEE_RANGE === 'undefined'? WIDTH / 8 : configuration.MELEE_RANGE;
-    var TRAVEL_SPEED_PER_SECOND = typeof configuration.SPEED_PER_SECOND === 'undefined'? MELEE_RANGE : configuration.SPEED_PER_SECOND;
-    var ATTACKS_PER_SECOND = typeof configuration.ATTACKS_PER_SECOND === 'undefined'? 1 : configuration.ATTACKS_PER_SECOND;
-    var CLIENT_UPDATES_PER_SECOND = typeof configuration.CLIENT_UPDATES_PER_SECOND === 'undefined'? 4 : configuration.CLIENT_UPDATES_PER_SECOND;
-    var SIMULATION_LOOPS_PER_SECOND = typeof configuration.SIMULATION_LOOPS_PER_SECOND === 'undefined'? 60 : configuration.SIMULATION_LOOPS_PER_SECOND;
-    var FULL_DAMAGE = typeof configuration.FULL_DAMAGE === 'undefined'? 35 : configuration.FULL_DAMAGE;
+    var WIDTH = configuration.WIDTH = typeof configuration.WIDTH === 'undefined'? 500 : configuration.WIDTH;
+    var HEIGHT = configuration.HEIGHT = typeof configuration.HEIGHT === 'undefined'? 500 : configuration.HEIGHT;
+    var MELEE_RANGE = configuration.MELEE_RANGE = typeof configuration.MELEE_RANGE === 'undefined'? 32 : configuration.MELEE_RANGE;
+    var TRAVEL_SPEED_PER_SECOND = configuration.TRAVEL_SPEED_PER_SECOND = typeof configuration.SPEED_PER_SECOND === 'undefined'? MELEE_RANGE * 2 : configuration.SPEED_PER_SECOND;
+    var ATTACKS_PER_SECOND = configuration.ATTACKS_PER_SECOND = typeof configuration.ATTACKS_PER_SECOND === 'undefined'? 1 : configuration.ATTACKS_PER_SECOND;
+    var CLIENT_UPDATES_PER_SECOND = configuration.CLIENT_UPDATES_PER_SECOND = typeof configuration.CLIENT_UPDATES_PER_SECOND === 'undefined'? 8 : configuration.CLIENT_UPDATES_PER_SECOND;
+    var SIMULATION_LOOPS_PER_SECOND = configuration.SIMULATION_LOOPS_PER_SECOND = typeof configuration.SIMULATION_LOOPS_PER_SECOND === 'undefined'? 60 : configuration.SIMULATION_LOOPS_PER_SECOND;
+    var FULL_DAMAGE = configuration.FULL_DAMAGE = typeof configuration.FULL_DAMAGE === 'undefined'? 35 : configuration.FULL_DAMAGE;
     
     var summoning = new Summoning();
     
@@ -29,7 +29,8 @@ exports.SummonersConvention = function(playerList, conventionEventHandler, confi
     
     this.convene = function() {
         conventionEventHandler({
-            event : 'convention-start'
+            event : 'convention-start',
+            configuration : configuration
         });
         summoners.forEach(function(summoner) {
             conventionEventHandler({
@@ -50,7 +51,9 @@ exports.SummonersConvention = function(playerList, conventionEventHandler, confi
                 attack : currentConfig.attack,
                 abilities : currentConfig.abilities,
                 golemNumber : golemNumberSequence++,
-                playerNumber : summoner.playerNumber
+                playerNumber : summoner.playerNumber,
+                direction : 0,
+                velocity : 0
             };
             copyProps(summoner.golem, getLocationAroundSummoningCircle(index));
             conventionEventHandler({
@@ -128,6 +131,7 @@ exports.SummonersConvention = function(playerList, conventionEventHandler, confi
     }
     
     function executeStepForGolem(golem, otherSurvivors) {
+        golem.velocity = 0;
         examineTarget(golem, otherSurvivors);
         if(typeof golem.targetGolemNumber !== 'undefined') {
             var target = golemByGolemNumber(golem.targetGolemNumber);
@@ -138,6 +142,7 @@ exports.SummonersConvention = function(playerList, conventionEventHandler, confi
             if(distanceToTarget >= MELEE_RANGE){
                 golem.x += Math.sin(golem.direction) * travelableDistanceThisStep;
                 golem.y += Math.cos(golem.direction) * travelableDistanceThisStep;
+                golem.velocity = TRAVEL_SPEED_PER_SECOND;
             } else if (typeof golem.lastSwingTime === 'undefined' || simLoopStartTime - golem.lastSwingTime >= 1000 / ATTACKS_PER_SECOND){
                 if (isHitSuccess(golem)) {
                     var damage = generateHitDamage(golem);

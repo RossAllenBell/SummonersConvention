@@ -1,6 +1,4 @@
-display golem configs
-smooth movement
-make dead golems paint first and a light/transparent color
+display golem graphic
 
 display hits
 display misses
@@ -10,3 +8,4 @@ implement abilities
 implement behavior
 maybe allow summoners to resummon, and lose the concept of a round
 add random events
+gracefully handle connection mid-game
