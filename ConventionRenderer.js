@@ -1,3 +1,15 @@
+var COLORS = {
+    Straw:  "E0C61B",
+    Wood:   "9C7200",
+    Ice:    "D4FCFF",
+    Clay:   "BA6236",
+    Iron:   "5E5E5E",
+    Base:   "BABABA",
+    Copper: "CC5A21",
+    Acid:   "97FF29",
+    Fire:   "FF9D00",
+};
+
 function ConventionRenderer(canvas, summoners, golems){
     
     var configuration = {};
@@ -7,7 +19,9 @@ function ConventionRenderer(canvas, summoners, golems){
     
     var WIDTH = canvas.drawableWidth;
     var HEIGHT = canvas.drawableHeight;
-    var BACKGROUND_COLOR = '#DDDDDD';
+    var BACKGROUND_COLOR = '#EEEEEE';
+    var OUTLINE_COLOR = '#CCCCCC';
+    var DEATH_TRANSPARENCY = 0.2;
     
     var GOLEM_SIZE = 64;
     
@@ -36,6 +50,12 @@ function ConventionRenderer(canvas, summoners, golems){
         golems.forEach(function(golem){
             if(golem.health > 0)drawGolem(golem);
         });
+        golems.forEach(function(golem){
+            if(golem.health <= 0)drawGolemLabels(golem);
+        });
+        golems.forEach(function(golem){
+            if(golem.health > 0)drawGolemLabels(golem);
+        });
         
         lastLoopStartTime = loopStartTime;
         setTimeout(arguments.callee, (1000/DESIRED_FPS) - (new Date().getTime() - loopStartTime));
@@ -55,43 +75,47 @@ function ConventionRenderer(canvas, summoners, golems){
     function drawGolem(golem){        
         context.save();
         context.translate(golem.x, golem.y);
+        context.rotate((2 * Math.PI) - golem.direction);
         if(golem.health <= 0){
-            context.globalAlpha = 0.3;
+            context.globalAlpha = DEATH_TRANSPARENCY;
         }
         
-        context.save();
-        context.rotate((2 * Math.PI) - golem.direction);
+        //body
+        context.fillStyle = '#' + COLORS[golem.material];
+        context.fillRect(-GOLEM_SIZE/2, -GOLEM_SIZE/6, GOLEM_SIZE, GOLEM_SIZE/3);
         
-        context.strokeStyle = '#000000';
-        context.beginPath();
-        context.arc(0, 0, GOLEM_SIZE/2, 0, 2 * Math.PI, false);
-        context.stroke();
+        //attack type
+        context.fillStyle = '#' + COLORS[golem.attack];
+        context.fillRect(-GOLEM_SIZE/2, -GOLEM_SIZE/6, GOLEM_SIZE/5, GOLEM_SIZE/3);
+        context.fillRect(GOLEM_SIZE/2, -GOLEM_SIZE/6, -GOLEM_SIZE/5, GOLEM_SIZE/3);
         
-        context.strokeStyle = '#0000FF';
-        context.beginPath();
-        context.moveTo(0, 0);
-        context.lineTo(0, GOLEM_SIZE/2);
-        context.closePath();
-        context.stroke();
+        //head
+        context.fillStyle = '#000000';
+        context.fillRect(-GOLEM_SIZE/10, 0, GOLEM_SIZE/5, GOLEM_SIZE/6);
+        
+        //outline
+        context.strokeStyle = OUTLINE_COLOR;
+        context.lineWidth = 1;
+        context.strokeRect(-GOLEM_SIZE/2, -GOLEM_SIZE/6, GOLEM_SIZE, GOLEM_SIZE/3);
         
         context.restore();
+    }
+    
+    function drawGolemLabels(golem){ 
+        context.save();
+        context.translate(golem.x, golem.y);
+        if(golem.health <= 0){
+            context.globalAlpha = DEATH_TRANSPARENCY;
+        }
         
+        //name
         var summoner = summonerByPlayerNumber(golem.playerNumber);
         context.fillStyle = '#000000';
         context.textAlign = 'center';
         context.textBaseline = 'top';
-        context.fillText(summoner.name + '(' + summoner.energy + ')', 0, GOLEM_SIZE/2 + 1);
+        context.fillText(summoner.name, 0, GOLEM_SIZE/2 + 1);
         
-        context.fillStyle = '#000000';
-        context.textAlign = 'center';
-        context.textBaseline = 'middle';
-        context.fillText(golem.attack, 0, -GOLEM_SIZE/4);
-        
-        context.fillStyle = '#000000';
-        context.textAlign = 'center';
-        context.textBaseline = 'middle';
-        context.fillText(golem.material, 0, GOLEM_SIZE/4);
-        
+        //health bar
         if(golem.health > 0){
             context.fillStyle = '#00FF00';
             context.fillRect(-GOLEM_SIZE/2, -GOLEM_SIZE/2 - 13, GOLEM_SIZE * golem.health / 100, 10);
@@ -99,6 +123,11 @@ function ConventionRenderer(canvas, summoners, golems){
                 context.fillStyle = '#FF0000';
                 context.fillRect((-GOLEM_SIZE/2) + (GOLEM_SIZE * golem.health / 100), -GOLEM_SIZE/2 - 13, GOLEM_SIZE - (GOLEM_SIZE * golem.health / 100), 10);
             }
+            
+            //outline
+            context.strokeStyle = OUTLINE_COLOR;
+            context.lineWidth = 1;
+            context.strokeRect(-GOLEM_SIZE/2, -GOLEM_SIZE/2 - 13, GOLEM_SIZE, 10);
         }
         
         context.restore();
