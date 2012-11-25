@@ -107,7 +107,7 @@ function SummonersConventionClient() {
         }
     };
     
-    var socket = new WebSocket("ws://localhost:8080");
+    var socket = new WebSocket(window.location.href.replace('http', 'ws'));
     socket.onmessage = function(message) {
         try {
             var json = JSON.parse(message.data);
