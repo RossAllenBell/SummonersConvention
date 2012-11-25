@@ -1,10 +1,10 @@
-display other connected players
 display hits
 display misses
 better display game status and remove text status
 gracefully handle connection mid-game
 create energy changing mechanics
-maybe allow summoners to resummon, and lose the concept of a round
+allow summoners to resummon, and lose the concept of a round
+--------
 implement abilities
 implement behavior
 add random events

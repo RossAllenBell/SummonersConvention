@@ -20,9 +20,9 @@ wsServer.on('request', function(request) {
 	var playerNumber = playerNumberSequence++;
 	var player = {playerNumber: playerNumber, connection: connection, playerId: playerId, name: "Player " + playerNumber, energy: 45, golemConfig: getBaseGolemConfig()};
 	connection.sendUTF(JSON.stringify({event: 'connected', name: player.name, playerNumber: playerNumber, energy: player.energy}));
-	messagePlayers({event:'playerJoined', name: player.name, playerNumber: playerNumber, energy: player.energy});
+	messagePlayers({event:'playerJoined', name: player.name, playerNumber: playerNumber});
 	players.push(player);
-	connection.sendUTF(JSON.stringify({event: 'playersList', players: players.map(function(e){return {name:e.name,playerNumber:e.playerNumber,energy:e.energy};})}));
+	connection.sendUTF(JSON.stringify({event: 'playersList', players: players.map(function(e){return {name:e.name,playerNumber:e.playerNumber};})}));
 	
 	if(typeof latestTimeoutId === 'undefined' && players.length >= 2){
 		latestTimeoutId = setTimeout(start, 0);
@@ -107,12 +107,6 @@ function nameChange(aPlayerId, nameChangeData) {
     var player = getPlayerById(aPlayerId);
     player.name = nameChangeData.name;
     messagePlayers({event: 'nameChange', name: player.name, playerNumber: player.playerNumber});
-    for(otherPlayerI in players){
-        var otherPlayer = players[otherPlayerI];
-        if(typeof otherPlayer.target !== 'undefined' && otherPlayer.target.playerNumber === player.playerNumber){
-            conventionEventHandler({event:'golem-targeted', name:otherPlayer.name, target:otherPlayer.target.name, playerNumber: otherPlayer.playerNumber, targetPlayerNumber: otherPlayer.target.playerNumber});
-        }
-    }
 }
 
 function getConnectionId(aConnection){
