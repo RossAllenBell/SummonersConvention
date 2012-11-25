@@ -8,7 +8,9 @@ exports.SummonersConvention = function(playerList, conventionEventHandler, confi
     var WIDTH = configuration.WIDTH = typeof configuration.WIDTH === 'undefined'? 500 : configuration.WIDTH;
     var HEIGHT = configuration.HEIGHT = typeof configuration.HEIGHT === 'undefined'? 500 : configuration.HEIGHT;
     var MELEE_RANGE = configuration.MELEE_RANGE = typeof configuration.MELEE_RANGE === 'undefined'? 32 : configuration.MELEE_RANGE;
-    var TRAVEL_SPEED_PER_SECOND = configuration.TRAVEL_SPEED_PER_SECOND = typeof configuration.SPEED_PER_SECOND === 'undefined'? MELEE_RANGE * 2 : configuration.SPEED_PER_SECOND;
+    var GOLEM_WIDTH = configuration.GOLEM_WIDTH = typeof configuration.GOLEM_WIDTH === 'undefined'? 64 : configuration.GOLEM_WIDTH;
+    var GOLEM_HEIGHT = configuration.GOLEM_HEIGHT = typeof configuration.GOLEM_HEIGHT === 'undefined'? 21 : configuration.GOLEM_HEIGHT;
+    var TRAVEL_SPEED_PER_SECOND = configuration.TRAVEL_SPEED_PER_SECOND = typeof configuration.TRAVEL_SPEED_PER_SECOND === 'undefined'? MELEE_RANGE * 2 : configuration.TRAVEL_SPEED_PER_SECOND;
     var ATTACKS_PER_SECOND = configuration.ATTACKS_PER_SECOND = typeof configuration.ATTACKS_PER_SECOND === 'undefined'? 1 : configuration.ATTACKS_PER_SECOND;
     var CLIENT_UPDATES_PER_SECOND = configuration.CLIENT_UPDATES_PER_SECOND = typeof configuration.CLIENT_UPDATES_PER_SECOND === 'undefined'? 8 : configuration.CLIENT_UPDATES_PER_SECOND;
     var SIMULATION_LOOPS_PER_SECOND = configuration.SIMULATION_LOOPS_PER_SECOND = typeof configuration.SIMULATION_LOOPS_PER_SECOND === 'undefined'? 60 : configuration.SIMULATION_LOOPS_PER_SECOND;
@@ -172,6 +174,19 @@ exports.SummonersConvention = function(playerList, conventionEventHandler, confi
                     event : 'convention-golem-targeted',
                     golem : golem
                 });
+            }
+            
+            //attack anything you come within melee range of if you're still travelling
+            var target = golemByGolemNumber(golem.targetGolemNumber);
+            var distanceToCurrentTarget = getDistance(golem.x, golem.y, target.x, target.y);
+            if(distanceToCurrentTarget >= MELEE_RANGE){
+	            otherSurvivors.forEach(function(otherGolem){
+	            	var thisDistance = getDistance(golem.x, golem.y, otherGolem.x, otherGolem.y);
+	            	if(thisDistance < MELEE_RANGE && thisDistance < distanceToCurrentTarget){
+	            		golem.targetGolemNumber = otherGolem.golemNumber;
+	            		distanceToCurrentTarget = thisDistance;
+	            	}
+	            });
             }
         } else {
             golem.targetGolemNumber = undefined;

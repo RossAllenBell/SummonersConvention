@@ -1,5 +1,3 @@
-make golems not able to occupy same space
-    if it's blocked, it attacks what is blocking it
 display other connected players
 display hits
 display misses
