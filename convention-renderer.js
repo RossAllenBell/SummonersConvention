@@ -15,6 +15,9 @@ function ConventionRenderer(canvas, summoners, golems){
     var configuration = {};
     this.setConfiguration = function(config){configuration = config;};
     
+    var renderedEvents = [];
+    this.addEvent = function(event){event.startRenderTime = loopStartTime; renderedEvents.push(event);};
+    
     var DESIRED_FPS = 60;
     
     var WIDTH = canvas.drawableWidth;
@@ -55,9 +58,42 @@ function ConventionRenderer(canvas, summoners, golems){
             if(golem.health > 0)drawGolemLabels(golem);
         });
         
+        renderedEvents = renderedEvents.filter(function(event){
+        	return event.startRenderTime >= loopStartTime - 1000;
+        });
+        renderedEvents.forEach(function(event){
+            renderEvent(event);
+        });
+        
         lastLoopStartTime = loopStartTime;
         setTimeout(arguments.callee, (1000/DESIRED_FPS) - (new Date().getTime() - loopStartTime));
     };
+    
+    function renderEvent(event) {
+        if(event.event === 'convention-golem-hit'){
+            context.save();
+            
+            context.globalAlpha = (1000 - (loopStartTime - event.startRenderTime)) / 1000;
+            context.font = 'normal 30px sans-serif';
+            context.textBaseline = 'middle';
+            context.textAlign = 'center';
+            context.fillStyle = '#FF0000';
+            context.fillText(event.damage, event.target.x, event.target.y);
+            
+            context.restore();
+        } else if (event.event === 'convention-golem-missed'){
+            context.save();
+            
+            context.globalAlpha = (1000 - (loopStartTime - event.startRenderTime)) / 1000;
+            context.font = 'normal 15px sans-serif';
+            context.textBaseline = 'middle';
+            context.textAlign = 'center';
+            context.fillStyle = '#777777';
+            context.fillText('miss', event.target.x, event.target.y);
+            
+            context.restore();
+        }
+    }
     
     function interpolatePosition(golem){
         if(golem.health > 0 && golem.velocity > 0){
@@ -115,8 +151,8 @@ function ConventionRenderer(canvas, summoners, golems){
         
         //health bar
         if(golem.health > 0){
-        	context.save();
-        	context.globalAlpha = 0.5;
+            context.save();
+            context.globalAlpha = 0.5;
             context.fillStyle = '#00FF00';
             context.fillRect(-configuration.GOLEM_WIDTH/2, -configuration.GOLEM_WIDTH/2 - 13, configuration.GOLEM_WIDTH * golem.health / 100, 10);
             if(golem.health < 100){

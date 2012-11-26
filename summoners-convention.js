@@ -157,8 +157,9 @@ exports.SummonersConvention = function(playerList, conventionEventHandler, confi
                     });
                 } else {
                     conventionEventHandler({
-                        event : 'convention-golem-misses',
-                        golem : golem
+                        event : 'convention-golem-missed',
+                        golem : golem,
+                        target : target
                     });
                 }
                 golem.lastSwingTime = simLoopStartTime;
@@ -180,13 +181,13 @@ exports.SummonersConvention = function(playerList, conventionEventHandler, confi
             var target = golemByGolemNumber(golem.targetGolemNumber);
             var distanceToCurrentTarget = getDistance(golem.x, golem.y, target.x, target.y);
             if(distanceToCurrentTarget >= MELEE_RANGE){
-	            otherSurvivors.forEach(function(otherGolem){
-	            	var thisDistance = getDistance(golem.x, golem.y, otherGolem.x, otherGolem.y);
-	            	if(thisDistance < MELEE_RANGE && thisDistance < distanceToCurrentTarget){
-	            		golem.targetGolemNumber = otherGolem.golemNumber;
-	            		distanceToCurrentTarget = thisDistance;
-	            	}
-	            });
+                otherSurvivors.forEach(function(otherGolem){
+                    var thisDistance = getDistance(golem.x, golem.y, otherGolem.x, otherGolem.y);
+                    if(thisDistance < MELEE_RANGE && thisDistance < distanceToCurrentTarget){
+                        golem.targetGolemNumber = otherGolem.golemNumber;
+                        distanceToCurrentTarget = thisDistance;
+                    }
+                });
             }
         } else {
             golem.targetGolemNumber = undefined;

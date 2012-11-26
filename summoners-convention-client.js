@@ -7,9 +7,9 @@ var exports = {};
 
 function SummonersConventionClient() {
     
-	var players = [];
-	
-	var summoners = [];
+    var players = [];
+    
+    var summoners = [];
     var golems = [];
     
     var canvas = new FluidCanvas({container: $('#renderDiv'), drawableWidth:500, drawableHeight:500, unavailableHeight: function(){return $('#hudDiv').height();}});
@@ -94,7 +94,8 @@ function SummonersConventionClient() {
         case 'convention-golem-hit':
             golemHit(data);
             break;
-        case 'convention-golem-misses':
+        case 'convention-golem-missed':
+            golemMissed(data);
             break;
         case 'convention-golem-destroyed':
             golemDestroyed(data);
@@ -139,6 +140,11 @@ function SummonersConventionClient() {
     function golemHit(hitData) {
         copyProps(golemByGolemNumber(hitData.golem.golemNumber),hitData.golem);
         copyProps(golemByGolemNumber(hitData.target.golemNumber),hitData.target);
+        conventionRenderer.addEvent(hitData);
+    }
+    
+    function golemMissed(missData) {
+        conventionRenderer.addEvent(missData);
     }
     
     function golemSummoned(golemData) {
@@ -156,19 +162,19 @@ function SummonersConventionClient() {
     };
     
     function playerJoined(playerData) {
-    	players.push(playerData);
-    	$('#connectedPlayersTable').append(playerRow(playerData.playerNumber, playerData.name));
+        players.push(playerData);
+        $('#connectedPlayersTable').append(playerRow(playerData.playerNumber, playerData.name));
     }
     
     function playerRow(playerNumber, playerName){
-    	var newRow = $('<tr>', {id: 'playerRow' + playerNumber});
-    	newRow.append($('<td>', {id: 'playerName' + playerNumber}).text(playerName));
-    	return newRow;
+        var newRow = $('<tr>', {id: 'playerRow' + playerNumber});
+        newRow.append($('<td>', {id: 'playerName' + playerNumber}).text(playerName));
+        return newRow;
     }
     
     function playerLeft(playerData) {
-    	players = players.filter(function(player){return player.playerNumber !== playerData.playerNumber;});
-    	$('#playerRow' + playerData.playerNumber).remove();
+        players = players.filter(function(player){return player.playerNumber !== playerData.playerNumber;});
+        $('#playerRow' + playerData.playerNumber).remove();
     }
     
     function nameChange(data){
