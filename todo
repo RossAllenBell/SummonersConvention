@@ -1,4 +1,3 @@
-better display game status and remove text status
 gracefully handle connection mid-game
 create energy changing mechanics
 allow summoners to resummon, and lose the concept of a round

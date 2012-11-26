@@ -59,7 +59,7 @@ function ConventionRenderer(canvas, summoners, golems){
         });
         
         renderedEvents = renderedEvents.filter(function(event){
-        	return event.startRenderTime >= loopStartTime - 1000;
+        	return event.startRenderTime >= loopStartTime - eventDuration(event);
         });
         renderedEvents.forEach(function(event){
             renderEvent(event);
@@ -69,11 +69,15 @@ function ConventionRenderer(canvas, summoners, golems){
         setTimeout(arguments.callee, (1000/DESIRED_FPS) - (new Date().getTime() - loopStartTime));
     };
     
+    function eventDuration(event){
+    	return 1000;
+    }
+    
     function renderEvent(event) {
         if(event.event === 'convention-golem-hit'){
             context.save();
             
-            context.globalAlpha = (1000 - (loopStartTime - event.startRenderTime)) / 1000;
+            context.globalAlpha = (eventDuration(event) - (loopStartTime - event.startRenderTime)) / eventDuration(event);
             context.font = 'normal 30px sans-serif';
             context.textBaseline = 'middle';
             context.textAlign = 'center';
@@ -84,12 +88,34 @@ function ConventionRenderer(canvas, summoners, golems){
         } else if (event.event === 'convention-golem-missed'){
             context.save();
             
-            context.globalAlpha = (1000 - (loopStartTime - event.startRenderTime)) / 1000;
+            context.globalAlpha = (eventDuration(event) - (loopStartTime - event.startRenderTime)) / eventDuration(event);
             context.font = 'normal 15px sans-serif';
             context.textBaseline = 'middle';
             context.textAlign = 'center';
             context.fillStyle = '#777777';
             context.fillText('miss', event.target.x, event.target.y);
+            
+            context.restore();
+        } else if (event.event === 'countdown-begin'){
+        	context.save();
+            
+            context.globalAlpha = (eventDuration(event) - (loopStartTime - event.startRenderTime)) / eventDuration(event);
+            context.font = 'normal 50px sans-serif';
+            context.textBaseline = 'middle';
+            context.textAlign = 'center';
+            context.fillStyle = '#000000';
+            context.fillText('Beginning...', WIDTH/2, HEIGHT/2);
+            
+            context.restore();
+        } else if (event.event === 'countdown'){
+        	context.save();
+            
+            context.globalAlpha = (eventDuration(event) - (loopStartTime - event.startRenderTime)) / eventDuration(event);
+            context.font = 'normal 50px sans-serif';
+            context.textBaseline = 'middle';
+            context.textAlign = 'center';
+            context.fillStyle = '#000000';
+            context.fillText(event.second, WIDTH/2, HEIGHT/2);
             
             context.restore();
         }

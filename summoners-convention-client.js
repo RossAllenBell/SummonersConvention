@@ -12,8 +12,9 @@ function SummonersConventionClient() {
     var summoners = [];
     var golems = [];
     
-    var canvas = new FluidCanvas({container: $('#renderDiv'), drawableWidth:500, drawableHeight:500, unavailableHeight: function(){return $('#hudDiv').height();}});
+    var canvas = new FluidCanvas({container: $('#renderDiv'), drawableWidth:500, drawableHeight:500, unavailableWidth: function(){return $('#connectedPlayersDiv').width();}, unavailableHeight: function(){return $('#hudDiv').height();}});
     $('#hudDiv').bind('DOMSubtreeModified', canvas.resizeContainerDiv);
+    $('#connectedPlayersDiv').bind('DOMSubtreeModified', canvas.resizeContainerDiv);
     var conventionRenderer = new ConventionRenderer(canvas, summoners, golems);
     
     var Summoning = new exports.Summoning();
@@ -70,10 +71,10 @@ function SummonersConventionClient() {
             nameChange(data);
             break;
         case 'countdown-begin':
-            $('#statusSpan').text('beginning countdown...');
+            conventionRenderer.addEvent(data);
             break;
         case 'countdown':
-            $('#statusSpan').text(data.second + '...');
+        	conventionRenderer.addEvent(data);
             break;
         case 'convention-summoner':
             summoners.push(data.summoner);
@@ -101,7 +102,6 @@ function SummonersConventionClient() {
             golemDestroyed(data);
             break;
         case 'convention-winner':
-            winner(data);
             break;
         case 'convention-end':
             break;
@@ -127,10 +127,6 @@ function SummonersConventionClient() {
         $('#energy').text(data.energy);
         me.playerNumber = data.playerNumber;
         me.energy = data.energy;
-    }
-    
-    function winner(data) {
-        $('#statusSpan').text(typeof data.golem === 'undefined'? 'a draw!' : summonerByPlayerNumber(data.golem.playerNumber).name + ' wins!');
     }
     
     function golemDestroyed(data) {

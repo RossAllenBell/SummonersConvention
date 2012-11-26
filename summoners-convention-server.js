@@ -51,7 +51,7 @@ function messagePlayers(message){
 
 function start(){
     messagePlayers({event: 'countdown-begin'});
-    setTimeout(countdown, 0);
+    setTimeout(countdown, 1000);
 }
 
 function countdown(secondsLeft){
