@@ -10,12 +10,11 @@ function SummonersConventionClient() {
     var players = [];
     
     var summoners = [];
-    var golems = [];
     
     var canvas = new FluidCanvas({container: $('#renderDiv'), drawableWidth:500, drawableHeight:500, unavailableWidth: function(){return $('#connectedPlayersDiv').width();}, unavailableHeight: function(){return $('#hudDiv').height();}});
     $('#hudDiv').bind('DOMSubtreeModified', canvas.resizeContainerDiv);
     $('#connectedPlayersDiv').bind('DOMSubtreeModified', canvas.resizeContainerDiv);
-    var conventionRenderer = new ConventionRenderer(canvas, summoners, golems);
+    var conventionRenderer = new ConventionRenderer(canvas, summoners);
     
     var Summoning = new exports.Summoning();
     
@@ -53,10 +52,35 @@ function SummonersConventionClient() {
         });
     }
     
+    $('#summonButton').click(function(){
+        var material = $('#materialSelect').val();
+        var attack = $('#attackSelect').val();
+        var abilities = [];
+        for (i in Summoning.ABILITY) {
+            if ($('#ability-' + i).attr('checked') === 'checked') {
+                abilities.push(i);
+            }
+        }        
+
+        socket.send(JSON.stringify({
+            event : 'summonGolem',
+            material : material,
+            attack : attack,
+            abilities: abilities
+        }));
+    });
+    
     var socketEventHandler = function(data) {
         switch (data.event) {
         case 'connected':
             connected(data);
+            break;
+        case 'existing-convention':
+            conventionRenderer.setConfiguration(data.configuration);
+            data.summoners.forEach(function(summoner){
+                summoners.push(summoner);
+            });
+            $('#summonButton').removeAttr('disabled');
             break;
         case 'playersList':
             playersList(data);
@@ -81,11 +105,10 @@ function SummonersConventionClient() {
             break;
         case 'convention-start':
             conventionRenderer.setConfiguration(data.configuration);
-            summoners.length = 0;
-            golems.length = 0;
+            $('#summonButton').removeAttr('disabled');
             break;
         case 'convention-golem-summoned':
-            golems.push(data.golem);
+            summonerByPlayerNumber(data.golem.playerNumber).golems.push(data.golem);
             break;
         case 'convention-golem-state-update':
             copyProps(golemByGolemNumber(data.golem.golemNumber),data.golem);
@@ -104,6 +127,7 @@ function SummonersConventionClient() {
         case 'convention-winner':
             break;
         case 'convention-end':
+            $('#summonButton').attr('disabled', true);
             break;
         default:
             console.warn('Unkown event: ' + JSON.stringify(data));
@@ -112,12 +136,7 @@ function SummonersConventionClient() {
     
     var socket = new WebSocket(window.location.href.replace('http', 'ws'));
     socket.onmessage = function(message) {
-        try {
-            var json = JSON.parse(message.data);
-            socketEventHandler(json);
-        } catch (e) {
-            console.log('Unable to parse socket event: ' + message.data + '\n' + e);
-        }
+        socketEventHandler(JSON.parse(message.data));
     };
     
     var me = {};
@@ -180,22 +199,6 @@ function SummonersConventionClient() {
     function golemOptionsChanged() {        
         updateCost();
         
-        var actualMaterial = $('#materialSelect').val();
-        var actualAttack = $('#attackSelect').val();
-        var actualAbilities = [];
-        for (i in Summoning.ABILITY) {
-            if ($('#ability-' + i).attr('checked') === 'checked') {
-                actualAbilities.push(i);
-            }
-        }        
-
-        socket.send(JSON.stringify({
-            event : 'golemConfigChange',
-            material : actualMaterial,
-            attack : actualAttack,
-            abilities: actualAbilities
-        }));
-        
         for (i in Summoning.MATERIAL) {
             if(Summoning.calculateCost(i, actualAttack, actualAbilities) > me.energy){
                 $('#materialOption' + i).prop('disabled', true);
@@ -254,8 +257,12 @@ function SummonersConventionClient() {
     }
     
     function golemByGolemNumber(aGolemNumber){
-        return golems.filter(function(golem){
-            return golem.golemNumber === aGolemNumber;
+        return summoners.reduce(function(list, summoner){
+            return list.concat(summoner.golems);
+        },[]).filter(function(golem){
+            if(golem.golemNumber === aGolemNumber){
+                return true;
+            }
         })[0];
     }
     

@@ -6,26 +6,30 @@ var Summoning = require('./summoning.js').Summoning;
 var server = connect.createServer(connect.static(__dirname)).listen(8080);
 var wsServer = new WebSocketServer({httpServer: server});
 
-var latestTimeoutId = undefined;
-
 var SETUP_SECONDS = 5;
 
 var players = [];
 var playerNumberSequence = 1;
+
+var summonersConvention = undefined;
 
 wsServer.on('request', function(request) {
     var connection = request.accept();
     var playerId = getConnectionId(connection);
     connection.playerId = playerId;
     var playerNumber = playerNumberSequence++;
-    var player = {playerNumber: playerNumber, connection: connection, playerId: playerId, name: "Player " + playerNumber, energy: 45, golemConfig: getBaseGolemConfig()};
+    var player = {playerNumber: playerNumber, connection: connection, playerId: playerId, name: "Player " + playerNumber, energy: 100, golemConfig: getBaseGolemConfig()};
     connection.sendUTF(JSON.stringify({event: 'connected', name: player.name, playerNumber: playerNumber, energy: player.energy}));
+    if(typeof summonersConvention !== 'undefined'){
+        summonersConvention.addPlayer(player);
+        connection.sendUTF(JSON.stringify({event: 'existing-convention', summoners: summonersConvention.getSummoners(), configuration: summonersConvention.getConfiguration()}));
+    }
     messagePlayers({event:'playerJoined', name: player.name, playerNumber: playerNumber});
     players.push(player);
     connection.sendUTF(JSON.stringify({event: 'playersList', players: players.map(function(e){return {name:e.name,playerNumber:e.playerNumber};})}));
     
-    if(typeof latestTimeoutId === 'undefined' && players.length >= 2){
-        latestTimeoutId = setTimeout(start, 0);
+    if(typeof summonersConvention === 'undefined' && players.length >= 2){
+        setTimeout(start, 0);
     }
     
     connection.on('message', function(message) {
@@ -45,7 +49,6 @@ wsServer.on('request', function(request) {
 
 function messagePlayers(message){
     var text = JSON.stringify(message);
-    //console.log(text);
     players.forEach(function(player){player.connection.sendUTF(text);});
 }
 
@@ -61,16 +64,16 @@ function countdown(secondsLeft){
     if(secondsLeft > 0){
         setTimeout(function(){countdown(secondsLeft);}, 1000);
     } else {
-        var summonersConvention = new SummonersConvention(players, conventionEventHandler);
+        summonersConvention = new SummonersConvention(players, conventionEventHandler);
         setTimeout(summonersConvention.convene, 1000);
     }
 }
 
 function end(){
     if(players.length >= 2){
-        latestTimeoutId = setTimeout(start, 1000);
+        setTimeout(start, 1000);
     } else {
-        latestTimeoutId = undefined;
+        summonersConvention = undefined;
     }    
 }
 
@@ -80,7 +83,6 @@ var conventionEventHandler = function(data){
         end();
         break;
     }
-
     messagePlayers(data);
 };
 
@@ -89,19 +91,16 @@ var socketEventHandler = function(aPlayerId, data){
     case 'nameChange':
         nameChange(aPlayerId, data);
         break;
-    case 'golemConfigChange':
-        golemConfigChange(aPlayerId, data);
+    case 'summonGolem':
+        if(typeof summonersConvention !== 'undefined'){
+            data.event = undefined;
+            summonersConvention.summonGolem(getPlayerById(aPlayerId).playerNumber, data);
+        }
         break;
     default:
         console.warn('Unkown event: ' + JSON.stringify(data));
     }
 };
-
-function golemConfigChange(aPlayerId, golemConfigChangeData) {
-    var golemConfig = JSON.parse(JSON.stringify(golemConfigChangeData));
-    golemConfig.event = undefined;
-    getPlayerById(aPlayerId).golemConfig = golemConfig;
-}
 
 function nameChange(aPlayerId, nameChangeData) {
     var player = getPlayerById(aPlayerId);

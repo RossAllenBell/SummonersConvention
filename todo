@@ -1,7 +1,6 @@
-gracefully handle connection mid-game
 create energy changing mechanics
-allow summoners to resummon, and lose the concept of a round
 --------
+clean up dead golems and disconnected players
 implement abilities
 implement behavior
 add random events

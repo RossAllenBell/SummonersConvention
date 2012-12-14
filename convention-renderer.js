@@ -10,7 +10,7 @@ var COLORS = {
     Fire:   "FF9D00",
 };
 
-function ConventionRenderer(canvas, summoners, golems){
+function ConventionRenderer(canvas, summoners){
     
     var configuration = {};
     this.setConfiguration = function(config){configuration = config;};
@@ -37,25 +37,35 @@ function ConventionRenderer(canvas, summoners, golems){
             lastLoopStartTime = loopStartTime;
         }
         millisThisLoop = loopStartTime - lastLoopStartTime;
-        golems.forEach(function(golem){
-            interpolatePosition(golem);
-        }, this);
+        summoners.forEach(function(summoner){
+            summoner.golems.forEach(function(golem){
+                interpolatePosition(golem);
+            });
+        });
 
         context.clearRect(0, 0, WIDTH, HEIGHT);
         context.fillStyle = BACKGROUND_COLOR;
         context.fillRect(0, 0, WIDTH, HEIGHT);
         
-        golems.forEach(function(golem){
-            if(golem.health <= 0)drawGolem(golem);
+        summoners.forEach(function(summoner){
+            summoner.golems.forEach(function(golem){
+                if(golem.health <= 0)drawGolem(golem);
+            });
         });
-        golems.forEach(function(golem){
-            if(golem.health > 0)drawGolem(golem);
+        summoners.forEach(function(summoner){
+            summoner.golems.forEach(function(golem){
+                if(golem.health > 0)drawGolem(golem);
+            });
         });
-        golems.forEach(function(golem){
-            if(golem.health <= 0)drawGolemLabels(golem);
+        summoners.forEach(function(summoner){
+            summoner.golems.forEach(function(golem){
+                if(golem.health <= 0)drawGolemLabels(golem);
+            });
         });
-        golems.forEach(function(golem){
-            if(golem.health > 0)drawGolemLabels(golem);
+        summoners.forEach(function(summoner){
+            summoner.golems.forEach(function(golem){
+                if(golem.health > 0)drawGolemLabels(golem);
+            });
         });
         
         renderedEvents = renderedEvents.filter(function(event){
@@ -203,9 +213,13 @@ function ConventionRenderer(canvas, summoners, golems){
     }
     
     function golemByGolemNumber(aGolemNumber){
-        return golems.filter(function(golem){
-            return golem.golemNumber === aGolemNumber;
-        })[0];
+        for(i in summoners){
+            for(j in summoners[i].golems){
+                if(summoners[i].golems[j].golemNumber === aGolemNumber){
+                    return summoners[i].golems[j];
+                }
+            }
+        }
     }
     
     function getDistance(x1,y1,x2,y2){

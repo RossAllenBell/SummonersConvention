@@ -16,18 +16,38 @@ exports.SummonersConvention = function(playerList, conventionEventHandler, confi
     var SIMULATION_LOOPS_PER_SECOND = configuration.SIMULATION_LOOPS_PER_SECOND = typeof configuration.SIMULATION_LOOPS_PER_SECOND === 'undefined'? 60 : configuration.SIMULATION_LOOPS_PER_SECOND;
     var FULL_DAMAGE = configuration.FULL_DAMAGE = typeof configuration.FULL_DAMAGE === 'undefined'? 35 : configuration.FULL_DAMAGE;
     
+    this.getConfiguration = function(){
+        return configuration;
+    };
+    
     var summoning = new Summoning();
     
     var golemNumberSequence = 1;
     
-    var summoners = playerList.map(function(player) {
+    var summoners = playerList.map(playerToSummoner);
+    
+    function playerToSummoner(player){
         return {
             playerNumber : player.playerNumber,
             name : player.name,
             golemConfig : player.golemConfig,
-            energy : player.energy
+            energy : player.energy,
+            golems : []
         };
-    });
+    }
+    
+    this.addPlayer = function(player){
+        var summoner = playerToSummoner(player);
+        summoners.push(summoner);
+        conventionEventHandler({
+            event : 'convention-summoner',
+            summoner : summoner
+        });
+    };
+    
+    this.getSummoners = function(){
+        return summoners;
+    };
     
     this.convene = function() {
         conventionEventHandler({
@@ -40,37 +60,35 @@ exports.SummonersConvention = function(playerList, conventionEventHandler, confi
                 summoner : summoner
             });
         });
-        summonGolems();
         setTimeout(simulationLoop, 0);
     };
     
-    function summonGolems() {
-        summoners.forEach(function(summoner, index) {            
-            var currentConfig = JSON.parse(JSON.stringify(summoner.golemConfig));
-            summoner.golem = {
+    this.summonGolem = function(playerNumber, config) {
+        var summoner = summonerByPlayerNumber(playerNumber);
+        var golem = {
                 health : 100,
-                material : currentConfig.material,
-                attack : currentConfig.attack,
-                abilities : currentConfig.abilities,
+                material : config.material,
+                attack : config.attack,
+                abilities : config.abilities,
                 golemNumber : golemNumberSequence++,
                 playerNumber : summoner.playerNumber,
                 direction : 0,
                 velocity : 0
             };
-            copyProps(summoner.golem, getLocationAroundSummoningCircle(index));
-            conventionEventHandler({
-                event : 'convention-golem-summoned',
-                golem : summoner.golem
-            });
+        summoner.golems.push(golem);
+        copyProps(golem, getLocationAroundSummoningCircle());
+        conventionEventHandler({
+            event : 'convention-golem-summoned',
+            golem : golem
         });
-    }
+    };
     
-    function getLocationAroundSummoningCircle(index){
-        var order = (index - 1) / summoners.length;
+    function getLocationAroundSummoningCircle(){
+        var order = Math.random();
         var lengthAroundCircle = order * 2 * Math.PI;
         var x = (Math.sin(lengthAroundCircle) * WIDTH / 2 * 0.8) + (WIDTH / 2);
         var y = -1 * (Math.cos(lengthAroundCircle) * HEIGHT / 2 * 0.8) + (HEIGHT / 2);
-        return {x: x, y: y, direction: Math.abs(Math.PI - Math.atan2(x,y))};
+        return {x: x, y: y, direction: Math.PI};
     }
     
     var lastSimLoopStartTime = undefined;
@@ -86,11 +104,13 @@ exports.SummonersConvention = function(playerList, conventionEventHandler, confi
             lastStateUpdateTime = simLoopStartTime;
         }
         travelableDistanceThisStep = TRAVEL_SPEED_PER_SECOND * (simLoopStartTime - lastSimLoopStartTime) / 1000;
-        var survivingGolems = summoners.map(function(summoner){
-            return summoner.golem;
-        }).filter(function(golem) {
-            return typeof golem !== 'undefined' && golem.health > 0;
-        });
+        var survivingGolems = summoners.reduce(function(list, summoner){
+            return list.concat(summoner.golems.filter(function(golem){
+                if(typeof golem !== 'undefined' && golem.health > 0){
+                    return true;
+                }                
+            }));
+        },[]);
         survivingGolems.forEach(function(survivor) {
             executeStepForGolem(survivor, survivingGolems.filter(function(otherSurvivor) {
                 return survivor.golemNumber !== otherSurvivor.golemNumber;
@@ -106,30 +126,17 @@ exports.SummonersConvention = function(playerList, conventionEventHandler, confi
         survivingGolems = survivingGolems.filter(function(golem) {
             return golem.health > 0;
         });
-        if (survivingGolems.length === 0) {
-            conventionEventHandler({
-                event : 'convention-winner'
-            });
-            setTimeout(end, 0);
-        } else if (survivingGolems.length === 1) {
-            conventionEventHandler({
-                event : 'convention-winner',
-                golem : survivingGolems[0]
-            });
-            setTimeout(end, 0);
-        } else {
-            if(simLoopStartTime - lastStateUpdateTime >= 1000 / CLIENT_UPDATES_PER_SECOND){
-                lastStateUpdateTime = simLoopStartTime;
-                survivingGolems.forEach(function(survivor) {
-                    conventionEventHandler({
-                        event : 'convention-golem-state-update',
-                        golem : survivor
-                    });
+        if(simLoopStartTime - lastStateUpdateTime >= 1000 / CLIENT_UPDATES_PER_SECOND){
+            lastStateUpdateTime = simLoopStartTime;
+            survivingGolems.forEach(function(survivor) {
+                conventionEventHandler({
+                    event : 'convention-golem-state-update',
+                    golem : survivor
                 });
-            }
-            lastSimLoopStartTime = simLoopStartTime;
-            setTimeout(simulationLoop, 1000 / SIMULATION_LOOPS_PER_SECOND - (simLoopStartTime - new Date().getTime()));
+            });
         }
+        lastSimLoopStartTime = simLoopStartTime;
+        setTimeout(simulationLoop, 1000 / SIMULATION_LOOPS_PER_SECOND - (simLoopStartTime - new Date().getTime()));
     }
     
     function executeStepForGolem(golem, otherSurvivors) {
@@ -212,10 +219,18 @@ exports.SummonersConvention = function(playerList, conventionEventHandler, confi
     }
     
     function golemByGolemNumber(golemNumber){
-        return summoners.map(function(summoner){
-            return summoner.golem;
-        }).filter(function(golem){
-            return golem.golemNumber === golemNumber;
+        return summoners.reduce(function(list, summoner){
+            return list.concat(summoner.golems);
+        },[]).filter(function(golem){
+            if(golem.golemNumber === golemNumber){
+                return true;
+            }
+        })[0];
+    }
+    
+    function summonerByPlayerNumber(aPlayerNumber){
+        return summoners.filter(function(summoner){
+            return summoner.playerNumber === aPlayerNumber;
         })[0];
     }
     
