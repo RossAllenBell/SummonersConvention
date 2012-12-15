@@ -134,7 +134,6 @@ function SummonersConventionClient() {
             summoners.push(summoner);
             $('#connectedPlayersTable').append(playerRow(summoner.playerNumber, summoner.name));
         });
-        $('#summonButton').removeAttr('disabled');
     }
     
     function energyUpdate(summoner){
