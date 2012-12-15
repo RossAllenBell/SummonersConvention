@@ -9,7 +9,8 @@ if(navigator.userAgent.toLowerCase().indexOf('chrome') == -1)
 var exports = {};
 
 function SummonersConventionClient() {
-    
+
+    var me = {};
     var summoners = [];
     
     var canvas = new FluidCanvas({container: $('#renderDiv'), drawableWidth:500, drawableHeight:500, unavailableWidth: function(){return $('#connectedPlayersDiv').width();}, unavailableHeight: function(){return $('#hudDiv').height();}});
@@ -83,8 +84,7 @@ function SummonersConventionClient() {
             nameChange(data);
             break;
         case 'convention-summoner-joined':
-            summoners.push(data.summoner);
-            $('#connectedPlayersTable').append(playerRow(data.summoner.playerNumber, data.summoner.name));
+            convetionSummonerJoined(data.summoner);
             break;
         case 'convention-summoner-left':
             conventionSummonerLeft(data.playerNumber);
@@ -96,6 +96,7 @@ function SummonersConventionClient() {
             copyProps(golemByGolemNumber(data.golem.golemNumber),data.golem);
             break;
         case 'convention-golem-targeted':
+            conventionGolemTargeted(data);
             break;
         case 'convention-golem-hit':
             golemHit(data);
@@ -109,6 +110,9 @@ function SummonersConventionClient() {
         case 'convention-golem-unspawn':
             golemUnspawned(data.golem);
             break;
+        case 'convention-energy-update':
+            energyUpdate(data.summoner);
+            break;
         default:
             console.warn('Unkown event: ' + JSON.stringify(data));
         }
@@ -119,13 +123,9 @@ function SummonersConventionClient() {
         socketEventHandler(JSON.parse(message.data));
     };
     
-    var me = {};
-    
     function connected(data){
         $('#myPlayerName').val(data.name);
-        $('#energy').text(data.energy);
         me.playerNumber = data.playerNumber;
-        me.energy = data.energy;
     }
     
     function existingConvention(data){
@@ -135,6 +135,26 @@ function SummonersConventionClient() {
             $('#connectedPlayersTable').append(playerRow(summoner.playerNumber, summoner.name));
         });
         $('#summonButton').removeAttr('disabled');
+    }
+    
+    function energyUpdate(summoner){
+        summonerByPlayerNumber(summoner.playerNumber).energy = summoner.energy;
+        if(summoner.playerNumber === me.playerNumber){
+            $('#energy').text(me.energy);
+            if(me.energy >= updateCost()){
+                $('#summonButton').removeAttr('disabled');
+            } else {
+                $('#summonButton').attr('disabled', true);
+            }
+        }
+    }
+    
+    function convetionSummonerJoined(summoner){
+        summoners.push(summoner);
+        $('#connectedPlayersTable').append(playerRow(summoner.playerNumber, summoner.name));
+        if(typeof me.name === 'undefined' && summoner.playerNumber === me.playerNumber){
+            me = summoner;
+        }
     }
     
     function conventionSummonerLeft(playerNumber){
@@ -176,10 +196,8 @@ function SummonersConventionClient() {
 
     }
     
-    function golemTargeted(golemData) {
-        if(golemData.playerNumber === me.playerNumber){
-            me.targetPlayerNumber = golemData.targetPlayerNumber;
-        }
+    function conventionGolemTargeted(data) {
+
     }
     
     function playerRow(playerNumber, playerName){
@@ -193,38 +211,11 @@ function SummonersConventionClient() {
         summonerByPlayerNumber(data.playerNumber).name = data.name;
     }
     
-    function golemOptionsChanged() {        
-        updateCost();
-        
-        for (i in Summoning.MATERIAL) {
-            if(Summoning.calculateCost(i, actualAttack, actualAbilities) > me.energy){
-                $('#materialOption' + i).prop('disabled', true);
-            } else {
-                $('#materialOption' + i).prop('disabled', false);
-            }
-        }
-        
-        for (i in Summoning.ATTACK_MODIFICATION) {
-            if(Summoning.calculateCost(actualMaterial, i, actualAbilities) > me.energy){
-                $('#attackOption' + i).prop('disabled', true);
-            } else {
-                $('#attackOption' + i).prop('disabled', false);
-            }
-        }
-        
-        for (i in Summoning.ABILITY) {
-            var id = 'ability-' + i;
-            if(actualAbilities.indexOf(i) === -1){
-                var abilitiesWithI = actualAbilities.slice(0);
-                abilitiesWithI.push(i);
-                if(Summoning.calculateCost(actualMaterial, actualAttack, abilitiesWithI) > me.energy){
-                    $('#' + id).prop('disabled', true);
-                } else {
-                    $('#' + id).prop('disabled', false);
-                }
-            } else {
-                $('#' + id).prop('disabled', false);
-            }
+    function golemOptionsChanged() {           
+        if(me.energy >= updateCost()){
+            $('#summonButton').removeAttr('disabled');
+        } else {
+            $('#summonButton').attr('disabled', true);
         }
     }
     
@@ -237,7 +228,9 @@ function SummonersConventionClient() {
                 abilities.push(i);
             }
         }
-        $('#cost').text(Summoning.calculateCost(material, attack, abilities));
+        var cost = Summoning.calculateCost(material, attack, abilities);
+        $('#cost').text(cost);
+        return cost;
     }
     
     function myNameChanged(){

@@ -1,7 +1,7 @@
 exports.Summoning = function(){
     
     this.MATERIAL = {
-            Straw: {cost:  0, Base: 0.70, Copper: 0.75, Acid: 0.50, Fire: 0.15},
+            Straw: {cost:  5, Base: 0.70, Copper: 0.75, Acid: 0.50, Fire: 0.15},
             Wood:  {cost: 15, Base: 0.80, Copper: 0.85, Acid: 0.65, Fire: 0.35},
             Ice:   {cost: 15, Base: 0.80, Copper: 0.57, Acid: 1.00, Fire: 0.25},
             Clay:  {cost: 20, Base: 0.90, Copper: 0.60, Acid: 0.75, Fire: 0.80},
@@ -9,7 +9,7 @@ exports.Summoning = function(){
         };
     
     this.ATTACK_MODIFICATION = {
-            Base:   {cost: 0},
+            Base:   {cost: 5},
             Copper: {cost: 20},
             Acid:   {cost: 30},
             Fire:   {cost: 30},

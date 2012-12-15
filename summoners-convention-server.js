@@ -16,9 +16,9 @@ wsServer.on('request', function(request) {
     var playerId = getConnectionId(connection);
     connection.playerId = playerId;
     var playerNumber = playerNumberSequence++;
-    var player = {playerNumber: playerNumber, connection: connection, playerId: playerId, name: "Player " + playerNumber, energy: 100, golemConfig: getBaseGolemConfig()};
+    var player = {playerNumber: playerNumber, connection: connection, playerId: playerId, name: "Player " + playerNumber, golemConfig: getBaseGolemConfig()};
     players.push(player);
-    connection.sendUTF(JSON.stringify({event: 'connected', name: player.name, playerNumber: playerNumber, energy: player.energy}));
+    connection.sendUTF(JSON.stringify({event: 'connected', name: player.name, playerNumber: playerNumber}));
     connection.sendUTF(JSON.stringify({event: 'existing-convention', summoners: summonersConvention.getSummoners(), configuration: summonersConvention.getConfiguration()}));
     summonersConvention.addPlayer(player);
     

@@ -15,7 +15,9 @@ exports.SummonersConvention = function(conventionEventHandler, configuration) {
     var CLIENT_UPDATES_PER_SECOND = configuration.CLIENT_UPDATES_PER_SECOND = typeof configuration.CLIENT_UPDATES_PER_SECOND === 'undefined'? 8 : configuration.CLIENT_UPDATES_PER_SECOND;
     var SIMULATION_LOOPS_PER_SECOND = configuration.SIMULATION_LOOPS_PER_SECOND = typeof configuration.SIMULATION_LOOPS_PER_SECOND === 'undefined'? 60 : configuration.SIMULATION_LOOPS_PER_SECOND;
     var FULL_DAMAGE = configuration.FULL_DAMAGE = typeof configuration.FULL_DAMAGE === 'undefined'? 35 : configuration.FULL_DAMAGE;
-    var DEATH_SECONDS = configuration.DEATH_SECONDS = typeof configuration.DEATH_SECONDS === 'undefined'? 5 : configuration.DEATH_SECONDS; 
+    var DEATH_SECONDS = configuration.DEATH_SECONDS = typeof configuration.DEATH_SECONDS === 'undefined'? 5 : configuration.DEATH_SECONDS;
+    var ENERGY_PER_SECOND = configuration.ENERGY_PER_SECOND = typeof configuration.ENERGY_PER_SECOND === 'undefined'? 2 : configuration.ENERGY_PER_SECOND;
+    var MAX_ENERGY = configuration.MAX_ENERGY = typeof configuration.MAX_ENERGY === 'undefined'? 100 : configuration.MAX_ENERGY;
     
     this.getConfiguration = function(){
         return configuration;
@@ -32,8 +34,9 @@ exports.SummonersConvention = function(conventionEventHandler, configuration) {
             playerNumber : player.playerNumber,
             name : player.name,
             golemConfig : player.golemConfig,
-            energy : player.energy,
-            golems : []
+            energy : 0,
+            golems : [],
+            lastEnergyTick : simLoopStartTime
         };
     }
     
@@ -65,23 +68,31 @@ exports.SummonersConvention = function(conventionEventHandler, configuration) {
     };
     
     this.summonGolem = function(playerNumber, config) {
+        var cost = summoning.calculateCost(config.material, config.attack, config.abilities);
         var summoner = summonerByPlayerNumber(playerNumber);
-        var golem = {
-                health : 100,
-                material : config.material,
-                attack : config.attack,
-                abilities : config.abilities,
-                golemNumber : golemNumberSequence++,
-                playerNumber : summoner.playerNumber,
-                direction : 0,
-                velocity : 0
-            };
-        summoner.golems.push(golem);
-        copyProps(golem, getLocationAroundSummoningCircle());
-        conventionEventHandler({
-            event : 'convention-golem-summoned',
-            golem : golem
-        });
+        if(cost <= summoner.energy){
+            summoner.energy -= cost;
+            conventionEventHandler({
+                event : 'convention-energy-update',
+                summoner : summoner
+            });
+            var golem = {
+                    health : 100,
+                    material : config.material,
+                    attack : config.attack,
+                    abilities : config.abilities,
+                    golemNumber : golemNumberSequence++,
+                    playerNumber : summoner.playerNumber,
+                    direction : 0,
+                    velocity : 0
+                };
+            summoner.golems.push(golem);
+            copyProps(golem, getLocationAroundSummoningCircle());
+            conventionEventHandler({
+                event : 'convention-golem-summoned',
+                golem : golem
+            });
+        }
     };
     
     function getLocationAroundSummoningCircle(){
@@ -109,13 +120,25 @@ exports.SummonersConvention = function(conventionEventHandler, configuration) {
         summoners.forEach(function(summoner){
             for(var i = summoner.golems.length - 1; i >= 0; i--){
                 var golem = summoner.golems[i];
-                if(typeof golem.deathTime !== 'undefined' && golem.deathTime + (DEATH_SECONDS*1000) <= new Date().getTime()){
+                if(typeof golem.deathTime !== 'undefined' && golem.deathTime + (DEATH_SECONDS*1000) <= simLoopStartTime){
                     summoner.golems.splice(i,1);
                     conventionEventHandler({
                         event : 'convention-golem-unspawn',
                         golem : golem
                     });
                 }
+            }
+        });
+        
+        summoners.forEach(function(summoner){
+            var newEnergy = Math.floor((simLoopStartTime - summoner.lastEnergyTick) / 1000 * ENERGY_PER_SECOND);
+            if(newEnergy >= 1){
+                summoner.energy = Math.min(MAX_ENERGY, summoner.energy + newEnergy);
+                summoner.lastEnergyTick += newEnergy / ENERGY_PER_SECOND * 1000;
+                conventionEventHandler({
+                    event : 'convention-energy-update',
+                    summoner : summoner
+                });
             }
         });
         
@@ -173,7 +196,13 @@ exports.SummonersConvention = function(conventionEventHandler, configuration) {
                     target.health -= damage;
                     
                     if(target.health <= 0 && typeof target.deathTime === 'undefined'){
-                        target.deathTime = new Date().getTime();
+                        target.deathTime = simLoopStartTime;
+                        var summoner = summonerByPlayerNumber(golem.playerNumber);
+                        summoner.energy += Math.floor(0.1 * summoning.calculateCost(target.material, target.attack, target.abilities));
+                        conventionEventHandler({
+                            event : 'convention-energy-update',
+                            summoner : summoner
+                        });
                     }
                     
                     conventionEventHandler({
