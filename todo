@@ -1,4 +1,4 @@
-clean up dead golems and disconnected players
+remove disconnected players from simulation
 create energy changing mechanics
 create points system
     simple kill:golems summoned ratio? perhaps factor in cost of golems summoned and killed, or maybe damage done

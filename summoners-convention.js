@@ -1,6 +1,6 @@
 var Summoning = require('./summoning.js').Summoning;
 
-exports.SummonersConvention = function(playerList, conventionEventHandler, configuration) {
+exports.SummonersConvention = function(conventionEventHandler, configuration) {
     if(typeof configuration === 'undefined'){
         configuration = {};
     }
@@ -15,6 +15,7 @@ exports.SummonersConvention = function(playerList, conventionEventHandler, confi
     var CLIENT_UPDATES_PER_SECOND = configuration.CLIENT_UPDATES_PER_SECOND = typeof configuration.CLIENT_UPDATES_PER_SECOND === 'undefined'? 8 : configuration.CLIENT_UPDATES_PER_SECOND;
     var SIMULATION_LOOPS_PER_SECOND = configuration.SIMULATION_LOOPS_PER_SECOND = typeof configuration.SIMULATION_LOOPS_PER_SECOND === 'undefined'? 60 : configuration.SIMULATION_LOOPS_PER_SECOND;
     var FULL_DAMAGE = configuration.FULL_DAMAGE = typeof configuration.FULL_DAMAGE === 'undefined'? 35 : configuration.FULL_DAMAGE;
+    var DEATH_SECONDS = configuration.DEATH_SECONDS = typeof configuration.DEATH_SECONDS === 'undefined'? 5 : configuration.DEATH_SECONDS; 
     
     this.getConfiguration = function(){
         return configuration;
@@ -24,7 +25,7 @@ exports.SummonersConvention = function(playerList, conventionEventHandler, confi
     
     var golemNumberSequence = 1;
     
-    var summoners = playerList.map(playerToSummoner);
+    var summoners = [];
     
     function playerToSummoner(player){
         return {
@@ -47,20 +48,6 @@ exports.SummonersConvention = function(playerList, conventionEventHandler, confi
     
     this.getSummoners = function(){
         return summoners;
-    };
-    
-    this.convene = function() {
-        conventionEventHandler({
-            event : 'convention-start',
-            configuration : configuration
-        });
-        summoners.forEach(function(summoner) {
-            conventionEventHandler({
-                event : 'convention-summoner',
-                summoner : summoner
-            });
-        });
-        setTimeout(simulationLoop, 0);
     };
     
     this.summonGolem = function(playerNumber, config) {
@@ -104,11 +91,25 @@ exports.SummonersConvention = function(playerList, conventionEventHandler, confi
             lastStateUpdateTime = simLoopStartTime;
         }
         travelableDistanceThisStep = TRAVEL_SPEED_PER_SECOND * (simLoopStartTime - lastSimLoopStartTime) / 1000;
+        
+        summoners.forEach(function(summoner){
+            for(var i = summoner.golems.length - 1; i >= 0; i--){
+                var golem = summoner.golems[i];
+                if(typeof golem.deathTime !== 'undefined' && golem.deathTime + (DEATH_SECONDS*1000) <= new Date().getTime()){
+                    summoner.golems.splice(i,1);
+                    conventionEventHandler({
+                        event : 'convention-golem-unspawn',
+                        golem : golem
+                    });
+                }
+            }
+        });
+        
         var survivingGolems = summoners.reduce(function(list, summoner){
             return list.concat(summoner.golems.filter(function(golem){
                 if(typeof golem !== 'undefined' && golem.health > 0){
                     return true;
-                }                
+                }
             }));
         },[]);
         survivingGolems.forEach(function(survivor) {
@@ -156,6 +157,11 @@ exports.SummonersConvention = function(playerList, conventionEventHandler, confi
                 if (isHitSuccess(golem)) {
                     var damage = generateHitDamage(golem);
                     target.health -= damage;
+                    
+                    if(target.health <= 0 && typeof target.deathTime === 'undefined'){
+                        target.deathTime = new Date().getTime();
+                    }
+                    
                     conventionEventHandler({
                         event : 'convention-golem-hit',
                         golem : golem,
@@ -244,4 +250,5 @@ exports.SummonersConvention = function(playerList, conventionEventHandler, confi
         }
     }
     
+    setTimeout(simulationLoop, 0);
 };

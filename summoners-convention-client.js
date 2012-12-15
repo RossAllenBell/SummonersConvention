@@ -97,18 +97,8 @@ function SummonersConventionClient() {
         case 'nameChange':
             nameChange(data);
             break;
-        case 'countdown-begin':
-            conventionRenderer.addEvent(data);
-            break;
-        case 'countdown':
-        	conventionRenderer.addEvent(data);
-            break;
         case 'convention-summoner':
             summoners.push(data.summoner);
-            break;
-        case 'convention-start':
-            conventionRenderer.setConfiguration(data.configuration);
-            $('#summonButton').removeAttr('disabled');
             break;
         case 'convention-golem-summoned':
             summonerByPlayerNumber(data.golem.playerNumber).golems.push(data.golem);
@@ -127,10 +117,8 @@ function SummonersConventionClient() {
         case 'convention-golem-destroyed':
             golemDestroyed(data);
             break;
-        case 'convention-winner':
-            break;
-        case 'convention-end':
-            $('#summonButton').attr('disabled', true);
+        case 'convention-golem-unspawn':
+            golemUnspawned(data.golem);
             break;
         default:
             console.warn('Unkown event: ' + JSON.stringify(data));
@@ -149,6 +137,17 @@ function SummonersConventionClient() {
         $('#energy').text(data.energy);
         me.playerNumber = data.playerNumber;
         me.energy = data.energy;
+    }
+    
+    function golemUnspawned(unspawnedGolem){
+        var summoner = summonerByPlayerNumber(unspawnedGolem.playerNumber);
+        for(var i=0; i<summoner.golems.length; i++){
+            var golem = summoner.golems[i];
+            if(golem.golemNumber === unspawnedGolem.golemNumber){
+                summoner.golems.splice(i,1);
+                break;
+            }
+        }
     }
     
     function golemDestroyed(data) {

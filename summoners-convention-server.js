@@ -11,8 +11,6 @@ var SETUP_SECONDS = 5;
 var players = [];
 var playerNumberSequence = 1;
 
-var summonersConvention = undefined;
-
 wsServer.on('request', function(request) {
     var connection = request.accept();
     var playerId = getConnectionId(connection);
@@ -20,10 +18,8 @@ wsServer.on('request', function(request) {
     var playerNumber = playerNumberSequence++;
     var player = {playerNumber: playerNumber, connection: connection, playerId: playerId, name: "Player " + playerNumber, energy: 100, golemConfig: getBaseGolemConfig()};
     connection.sendUTF(JSON.stringify({event: 'connected', name: player.name, playerNumber: playerNumber, energy: player.energy}));
-    if(typeof summonersConvention !== 'undefined'){
-        summonersConvention.addPlayer(player);
-        connection.sendUTF(JSON.stringify({event: 'existing-convention', summoners: summonersConvention.getSummoners(), configuration: summonersConvention.getConfiguration()}));
-    }
+    summonersConvention.addPlayer(player);
+    connection.sendUTF(JSON.stringify({event: 'existing-convention', summoners: summonersConvention.getSummoners(), configuration: summonersConvention.getConfiguration()}));
     messagePlayers({event:'playerJoined', name: player.name, playerNumber: playerNumber});
     players.push(player);
     connection.sendUTF(JSON.stringify({event: 'playersList', players: players.map(function(e){return {name:e.name,playerNumber:e.playerNumber};})}));
@@ -52,39 +48,11 @@ function messagePlayers(message){
     players.forEach(function(player){player.connection.sendUTF(text);});
 }
 
-function start(){
-    messagePlayers({event: 'countdown-begin'});
-    setTimeout(countdown, 1000);
-}
-
-function countdown(secondsLeft){
-    secondsLeft = secondsLeft || SETUP_SECONDS;
-    messagePlayers({event: 'countdown', second: secondsLeft});
-    secondsLeft--;
-    if(secondsLeft > 0){
-        setTimeout(function(){countdown(secondsLeft);}, 1000);
-    } else {
-        summonersConvention = new SummonersConvention(players, conventionEventHandler);
-        setTimeout(summonersConvention.convene, 1000);
-    }
-}
-
-function end(){
-    if(players.length >= 2){
-        setTimeout(start, 1000);
-    } else {
-        summonersConvention = undefined;
-    }    
-}
-
 var conventionEventHandler = function(data){
-    switch(data.event){
-    case 'convention-end':
-        end();
-        break;
-    }
     messagePlayers(data);
 };
+
+var summonersConvention = new SummonersConvention(conventionEventHandler);
 
 var socketEventHandler = function(aPlayerId, data){
     switch(data.event){
