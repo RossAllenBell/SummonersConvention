@@ -3,6 +3,9 @@ if (!window.WebSocket && window.MozWebSocket)
 if (!window.WebSocket)
     alert('WebSocket not supported by this browser');
 
+if(navigator.userAgent.toLowerCase().indexOf('chrome') == -1)
+    alert('This application has only been tested in the Chrome browser:\n\nhttps://www.google.com/intl/en/chrome/browser/');
+
 var exports = {};
 
 function SummonersConventionClient() {

@@ -1,6 +1,8 @@
-create energy changing mechanics
---------
 clean up dead golems and disconnected players
+create energy changing mechanics
+create points system
+    simple kill:golems summoned ratio? perhaps factor in cost of golems summoned and killed, or maybe damage done
+--------
 implement abilities
 implement behavior
 add random events
