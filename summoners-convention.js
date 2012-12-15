@@ -41,9 +41,23 @@ exports.SummonersConvention = function(conventionEventHandler, configuration) {
         var summoner = playerToSummoner(player);
         summoners.push(summoner);
         conventionEventHandler({
-            event : 'convention-summoner',
+            event : 'convention-summoner-joined',
             summoner : summoner
         });
+    };
+    
+    this.removePlayer = function(player){
+        for(var i=0; i<summoners.length; i++){
+            if(summoners[i].playerNumber === player.playerNumber){
+                summoners.splice(i,1);
+            }
+        }
+        conventionEventHandler({event:'convention-summoner-left', playerNumber: player.playerNumber});
+    };
+    
+    this.playerNameChanged = function(player){
+        summonerByPlayerNumber(player.playerNumber).name = player.name;
+        conventionEventHandler({event: 'convention-summoner-name-change', name: player.name, playerNumber: player.playerNumber});
     };
     
     this.getSummoners = function(){
@@ -182,7 +196,8 @@ exports.SummonersConvention = function(conventionEventHandler, configuration) {
     
     function examineTarget(golem, otherSurvivors) {
         if (otherSurvivors.length > 0){
-            if (typeof golem.targetGolemNumber === 'undefined' || golemByGolemNumber(golem.targetGolemNumber).health <= 0) {
+            var target = golemByGolemNumber(golem.targetGolemNumber);
+            if (typeof target === 'undefined' || target.health <= 0) {
                 golem.targetGolemNumber = otherSurvivors[Math.floor(otherSurvivors.length * Math.random())].golemNumber;
                 conventionEventHandler({
                     event : 'convention-golem-targeted',
@@ -191,7 +206,7 @@ exports.SummonersConvention = function(conventionEventHandler, configuration) {
             }
             
             //attack anything you come within melee range of if you're still travelling
-            var target = golemByGolemNumber(golem.targetGolemNumber);
+            target = golemByGolemNumber(golem.targetGolemNumber);
             var distanceToCurrentTarget = getDistance(golem.x, golem.y, target.x, target.y);
             if(distanceToCurrentTarget >= MELEE_RANGE){
                 otherSurvivors.forEach(function(otherGolem){
@@ -216,12 +231,6 @@ exports.SummonersConvention = function(conventionEventHandler, configuration) {
         var target = golemByGolemNumber(golem.targetGolemNumber);
         var blockedDamage = unblockedDamage * Math.random() * summoning.MATERIAL[target.material][golem.attack];
         return Math.max(0, Math.ceil(unblockedDamage - blockedDamage));
-    }
-    
-    function end() {
-        conventionEventHandler({
-            event : 'convention-end'
-        });
     }
     
     function golemByGolemNumber(golemNumber){

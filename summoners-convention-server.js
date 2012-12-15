@@ -17,12 +17,10 @@ wsServer.on('request', function(request) {
     connection.playerId = playerId;
     var playerNumber = playerNumberSequence++;
     var player = {playerNumber: playerNumber, connection: connection, playerId: playerId, name: "Player " + playerNumber, energy: 100, golemConfig: getBaseGolemConfig()};
-    connection.sendUTF(JSON.stringify({event: 'connected', name: player.name, playerNumber: playerNumber, energy: player.energy}));
-    summonersConvention.addPlayer(player);
-    connection.sendUTF(JSON.stringify({event: 'existing-convention', summoners: summonersConvention.getSummoners(), configuration: summonersConvention.getConfiguration()}));
-    messagePlayers({event:'playerJoined', name: player.name, playerNumber: playerNumber});
     players.push(player);
-    connection.sendUTF(JSON.stringify({event: 'playersList', players: players.map(function(e){return {name:e.name,playerNumber:e.playerNumber};})}));
+    connection.sendUTF(JSON.stringify({event: 'connected', name: player.name, playerNumber: playerNumber, energy: player.energy}));
+    connection.sendUTF(JSON.stringify({event: 'existing-convention', summoners: summonersConvention.getSummoners(), configuration: summonersConvention.getConfiguration()}));
+    summonersConvention.addPlayer(player);
     
     if(typeof summonersConvention === 'undefined' && players.length >= 2){
         setTimeout(start, 0);
@@ -38,7 +36,7 @@ wsServer.on('request', function(request) {
     });
     connection.on('close', function(reasonCode, description) {
         var disconnectingPlayer = getPlayerById(this.playerId);
-        messagePlayers({event:'playerLeft', name: disconnectingPlayer.name, playerNumber: disconnectingPlayer.playerNumber});
+        summonersConvention.removePlayer(player);
         players = players.filter(function(player){return player.playerId !== disconnectingPlayer.playerId;});
     });
 });
@@ -73,7 +71,7 @@ var socketEventHandler = function(aPlayerId, data){
 function nameChange(aPlayerId, nameChangeData) {
     var player = getPlayerById(aPlayerId);
     player.name = nameChangeData.name;
-    messagePlayers({event: 'nameChange', name: player.name, playerNumber: player.playerNumber});
+    summonersConvention.playerNameChanged(player);
 }
 
 function getConnectionId(aConnection){

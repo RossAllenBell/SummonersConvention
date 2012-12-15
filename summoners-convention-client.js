@@ -10,8 +10,6 @@ var exports = {};
 
 function SummonersConventionClient() {
     
-    var players = [];
-    
     var summoners = [];
     
     var canvas = new FluidCanvas({container: $('#renderDiv'), drawableWidth:500, drawableHeight:500, unavailableWidth: function(){return $('#connectedPlayersDiv').width();}, unavailableHeight: function(){return $('#hudDiv').height();}});
@@ -79,26 +77,17 @@ function SummonersConventionClient() {
             connected(data);
             break;
         case 'existing-convention':
-            conventionRenderer.setConfiguration(data.configuration);
-            data.summoners.forEach(function(summoner){
-                summoners.push(summoner);
-            });
-            $('#summonButton').removeAttr('disabled');
+            existingConvention(data);
             break;
-        case 'playersList':
-            playersList(data);
-            break;
-        case 'playerJoined':
-            playerJoined(data);
-            break;
-        case 'playerLeft':
-            playerLeft(data);
-            break;
-        case 'nameChange':
+        case 'convention-summoner-name-change':
             nameChange(data);
             break;
-        case 'convention-summoner':
+        case 'convention-summoner-joined':
             summoners.push(data.summoner);
+            $('#connectedPlayersTable').append(playerRow(data.summoner.playerNumber, data.summoner.name));
+            break;
+        case 'convention-summoner-left':
+            conventionSummonerLeft(data.playerNumber);
             break;
         case 'convention-golem-summoned':
             summonerByPlayerNumber(data.golem.playerNumber).golems.push(data.golem);
@@ -139,6 +128,25 @@ function SummonersConventionClient() {
         me.energy = data.energy;
     }
     
+    function existingConvention(data){
+        conventionRenderer.setConfiguration(data.configuration);
+        data.summoners.forEach(function(summoner){
+            summoners.push(summoner);
+            $('#connectedPlayersTable').append(playerRow(summoner.playerNumber, summoner.name));
+        });
+        $('#summonButton').removeAttr('disabled');
+    }
+    
+    function conventionSummonerLeft(playerNumber){
+        for(var i=0; i<summoners.length; i++){
+            if(summoners[i].playerNumber === playerNumber){
+                summoners.splice(i,1);
+                break;
+            }
+        }
+        $('#playerRow' + playerNumber).remove();
+    }
+    
     function golemUnspawned(unspawnedGolem){
         var summoner = summonerByPlayerNumber(unspawnedGolem.playerNumber);
         for(var i=0; i<summoner.golems.length; i++){
@@ -174,28 +182,15 @@ function SummonersConventionClient() {
         }
     }
     
-    function playersList(playersData) {
-        playersData.players.forEach(function(player){playerJoined(player);});
-    };
-    
-    function playerJoined(playerData) {
-        players.push(playerData);
-        $('#connectedPlayersTable').append(playerRow(playerData.playerNumber, playerData.name));
-    }
-    
     function playerRow(playerNumber, playerName){
         var newRow = $('<tr>', {id: 'playerRow' + playerNumber});
         newRow.append($('<td>', {id: 'playerName' + playerNumber}).text(playerName));
         return newRow;
     }
     
-    function playerLeft(playerData) {
-        players = players.filter(function(player){return player.playerNumber !== playerData.playerNumber;});
-        $('#playerRow' + playerData.playerNumber).remove();
-    }
-    
     function nameChange(data){
         $('#playerName' + data.playerNumber).text(data.name);
+        summonerByPlayerNumber(data.playerNumber).name = data.name;
     }
     
     function golemOptionsChanged() {        

@@ -10,8 +10,9 @@ var COLORS = {
     Fire:   "FF9D00",
 };
 
-function ConventionRenderer(canvas, summoners){
+function ConventionRenderer(canvas, summonersArray){
     
+    var summoners = summonersArray;
     var configuration = {};
     this.setConfiguration = function(config){configuration = config;};
     
