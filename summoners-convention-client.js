@@ -113,6 +113,9 @@ function SummonersConventionClient() {
         case 'convention-energy-update':
             energyUpdate(data.summoner);
             break;
+        case 'convention-score-update':
+            scoreUpdate(data.summoner);
+            break;
         default:
             console.warn('Unkown event: ' + JSON.stringify(data));
         }
@@ -146,6 +149,11 @@ function SummonersConventionClient() {
                 $('#summonButton').attr('disabled', true);
             }
         }
+    }
+    
+    function scoreUpdate(summoner){
+        summonerByPlayerNumber(summoner.playerNumber).score = summoner.score;
+        $('#playerScore' + summoner.playerNumber).text(summoner.score);
     }
     
     function convetionSummonerJoined(summoner){
@@ -191,10 +199,6 @@ function SummonersConventionClient() {
         conventionRenderer.addEvent(missData);
     }
     
-    function golemSummoned(golemData) {
-
-    }
-    
     function conventionGolemTargeted(data) {
 
     }
@@ -202,12 +206,13 @@ function SummonersConventionClient() {
     function playerRow(playerNumber, playerName){
         var newRow = $('<tr>', {id: 'playerRow' + playerNumber});
         newRow.append($('<td>', {id: 'playerName' + playerNumber}).text(playerName));
+        newRow.append($('<td>', {id: 'playerScore' + playerNumber}).text("0").addClass('score'));
         return newRow;
     }
     
     function nameChange(data){
-        $('#playerName' + data.playerNumber).text(data.name);
         summonerByPlayerNumber(data.playerNumber).name = data.name;
+        $('#playerName' + data.playerNumber).text(data.name);
     }
     
     function golemOptionsChanged() {           

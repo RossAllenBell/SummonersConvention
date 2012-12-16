@@ -33,7 +33,7 @@ exports.SummonersConvention = function(conventionEventHandler, configuration) {
         return {
             playerNumber : player.playerNumber,
             name : player.name,
-            golemConfig : player.golemConfig,
+            score: 0,
             energy : 0,
             golems : [],
             lastEnergyTick : simLoopStartTime
@@ -91,6 +91,11 @@ exports.SummonersConvention = function(conventionEventHandler, configuration) {
             conventionEventHandler({
                 event : 'convention-golem-summoned',
                 golem : golem
+            });
+            summoner.score -= 1;
+            conventionEventHandler({
+                event : 'convention-score-update',
+                summoner : summoner
             });
         }
     };
@@ -197,12 +202,19 @@ exports.SummonersConvention = function(conventionEventHandler, configuration) {
                     
                     if(target.health <= 0 && typeof target.deathTime === 'undefined'){
                         target.deathTime = simLoopStartTime;
-                        var summoner = summonerByPlayerNumber(golem.playerNumber);
-                        summoner.energy += Math.floor(0.1 * summoning.calculateCost(target.material, target.attack, target.abilities));
-                        conventionEventHandler({
-                            event : 'convention-energy-update',
-                            summoner : summoner
-                        });
+                        if(golem.playerNumber !== target.playerNumber){
+                            var summoner = summonerByPlayerNumber(golem.playerNumber);
+                            summoner.energy += Math.floor(0.1 * summoning.calculateCost(target.material, target.attack, target.abilities));
+                            conventionEventHandler({
+                                event : 'convention-energy-update',
+                                summoner : summoner
+                            });
+                            summoner.score += 2;
+                            conventionEventHandler({
+                                event : 'convention-score-update',
+                                summoner : summoner
+                            });
+                        }
                     }
                     
                     conventionEventHandler({
